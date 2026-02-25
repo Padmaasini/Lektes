@@ -1,4 +1,5 @@
 # TalentMesh API - Requirements
+<<<<<<< HEAD
 # Compatible with Python 3.14
 
 # Web Framework
@@ -27,3 +28,34 @@ linkedin-api
 # Utilities
 python-dotenv
 pydantic[email]
+=======
+# All free, no paid services required for MVP
+
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# Database
+sqlalchemy==2.0.36
+pydantic-settings==2.6.1
+
+# CV Parsing (Free)
+PyMuPDF==1.24.13
+python-docx==1.1.2
+pdfplumber==0.11.4
+
+# LLM - Groq (Free tier)
+groq==0.11.0
+
+# External Profile Verification (Free)
+linkedin-api==2.3.1
+httpx==0.27.2
+
+# Email (Free - Gmail SMTP)
+# Uses built-in smtplib — no extra package needed
+
+# Utilities
+python-dotenv==1.0.1
+pydantic[email]==2.10.2
+>>>>>>> f53ffaae183ed83f8cdac378058529246e41db7b

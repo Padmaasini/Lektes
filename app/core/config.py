@@ -10,9 +10,15 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./talentmesh.db"
 
+<<<<<<< HEAD
     # LLM - Gemini (Free)
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-1.5-flash"
+=======
+    # LLM - Groq (Free)
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
+>>>>>>> f53ffaae183ed83f8cdac378058529246e41db7b
 
     # Email - Gmail SMTP (Free)
     GMAIL_USER: Optional[str] = None
