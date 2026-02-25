@@ -1,0 +1,29 @@
+# TalentMesh API - Requirements
+# Compatible with Python 3.14
+
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database
+sqlalchemy
+pydantic-settings
+
+# CV Parsing (Free)
+PyMuPDF
+python-docx
+pdfplumber
+
+# LLM - Gemini (Free tier)
+google-generativeai
+
+# External Profile Verification (Free)
+httpx
+
+# LinkedIn (Free)
+linkedin-api
+
+# Utilities
+python-dotenv
+pydantic[email]
