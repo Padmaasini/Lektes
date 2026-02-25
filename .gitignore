@@ -1,0 +1,31 @@
+# Environment
+.env
+*.env
+
+# Database
+*.db
+*.sqlite
+
+# Uploads (don't commit CV files)
+uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

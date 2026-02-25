@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: talentmesh-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -c "from app.core.database import init_db; init_db()" && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LINKEDIN_USERNAME
+        sync: false
+      - key: LINKEDIN_PASSWORD
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///./talentmesh.db
+      - key: DEBUG
+        value: "False"
+      - key: UPLOAD_DIR
+        value: ./uploads
