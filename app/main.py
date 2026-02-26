@@ -45,4 +45,4 @@ async def frontend():
     index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return HTMLResponse("<h1>TalentMesh API is running</h1><p>Visit <a href='/docs'>/docs</a> for the API.</p>")
+    return HTMLResponse("<h1>TalentMesh API is running</h1><p>Visit <a href='/docs'>/docs</a></p>")
