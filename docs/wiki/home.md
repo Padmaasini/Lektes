@@ -40,10 +40,18 @@ An AI-powered recruitment screening agent that:
 Scroll down → click **Commit new file**
 
 ---
+### Day 2 — February 26, 2026
+✅ Python 3.12 installed
+✅ All dependencies installed  
+✅ Gemini API configured
+✅ API running locally at localhost:8000
+✅ Swagger UI working with all endpoints
+✅ Health check returning 200 OK
+✅ Deployed to Render successfully
+✅ Live at https://hrassist-dqb3.onrender.com/docs
+🔄 BigRock domain connection in progress
 
-## Your docs Folder Structure Going Forward
 
-Every day we build something, we add an entry. By March 19th your docs folder will look like this:
 ```
 docs/
 ├── wiki/
