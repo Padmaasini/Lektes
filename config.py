@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # LLM - Gemini (Free)
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # Email - Gmail SMTP (Free)
     GMAIL_USER: Optional[str] = None
