@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import jobs, candidates, screen, reports, health
 from app.core.config import settings
+from fastapi.responses import FileResponse
+
 
 app = FastAPI(
     title="TalentMesh API",
@@ -35,4 +37,9 @@ async def root():
         "status": "running",
         "message": "AI-powered recruitment screening agent",
         "docs": "/docs"
+
+@app.get("/")
+async def frontend():
+    return FileResponse("index.html")
+
     }
