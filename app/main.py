@@ -1,8 +1,9 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import jobs, candidates, screen, reports, health
 from app.core.config import settings
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 
 app = FastAPI(
@@ -37,9 +38,11 @@ async def root():
         "status": "running",
         "message": "AI-powered recruitment screening agent",
         "docs": "/docs"
+        }
 
 @app.get("/")
 async def frontend():
-    return FileResponse("index.html")
-
-    }
+    index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return HTMLResponse("<h1>TalentMesh API is running</h1><p>Visit <a href='/docs'>/docs</a> for the API.</p>")
