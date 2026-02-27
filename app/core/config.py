@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./talentmesh.db"
 
     # LLM - Groq (Free, fast)
-    GROQ_API_KEY: Optional[str] = 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
+    GROQ_API_KEY: Optional[str] = None
+
 
     # LLM - Gemini (kept as fallback)
     GEMINI_API_KEY: Optional[str] = None
