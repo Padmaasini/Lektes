@@ -10,19 +10,16 @@ python-multipart
 sqlalchemy
 pydantic-settings
 
-# CV Parsing (Free)
+# CV Parsing
 PyMuPDF
 python-docx
 pdfplumber
 
-# LLM - Gemini (Free tier)
-google-generativeai
+# LLM - Groq (Free, fast, generous limits)
+groq
 
-# External Profile Verification (Free)
+# External Profile Verification
 httpx
-
-# LinkedIn (Free)
-linkedin-api
 
 # Utilities
 python-dotenv
