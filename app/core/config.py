@@ -10,19 +10,22 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./talentmesh.db"
 
-    # LLM - Gemini (Free)
-    GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    # LLM - Groq (Free, fast)
+    GROQ_API_KEY: Optional[str] = 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
 
-    # Email - Gmail SMTP (Free)
+    # LLM - Gemini (kept as fallback)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+
+    # Email - Gmail SMTP
     GMAIL_USER: Optional[str] = None
     GMAIL_APP_PASSWORD: Optional[str] = None
 
-    # LinkedIn (linkedin-api library - Free)
+    # LinkedIn
     LINKEDIN_USERNAME: Optional[str] = None
     LINKEDIN_PASSWORD: Optional[str] = None
 
-    # GitHub (Free)
+    # GitHub
     GITHUB_TOKEN: Optional[str] = None
 
     # File Upload
