@@ -1,26 +1,15 @@
-# TalentMesh API - Requirements
-# Compatible with Python 3.12
-
-# Web Framework
 fastapi
 uvicorn[standard]
 python-multipart
-
-# Database
 sqlalchemy
 pydantic-settings
-
-# CV Parsing
 PyMuPDF
 python-docx
 pdfplumber
-
-# LLM - Groq (Free, fast, generous limits)
 groq
-
-# External Profile Verification
+langchain-groq
+langchain-core
+langgraph
 httpx
-
-# Utilities
 python-dotenv
 pydantic[email]
