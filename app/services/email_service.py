@@ -4,100 +4,81 @@ from email.mime.text import MIMEText
 from typing import List
 from app.core.config import settings
 
-async def send_report_email(job, candidates: List) -> bool:
-    """
-    Send the screening report to HR via Gmail SMTP.
-    Completely free — uses your Gmail account.
-    """
-    if not settings.GMAIL_USER or not settings.GMAIL_APP_PASSWORD:
-        print("  ⚠️  Gmail credentials not configured — skipping email")
-        return False
 
-    try:
-        html_body = build_email_html(job, candidates)
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🎯 TalentMesh Report: Top {len(candidates)} Candidates for {job.title}"
-        msg["From"] = settings.GMAIL_USER
-        msg["To"] = job.hr_email
+def build_email_html(job_title: str, candidates: List[dict]) -> str:
+    def score_color(s):
+        return "#2d7a4f" if s >= 70 else "#d97706" if s >= 45 else "#c0392b"
+    def score_label(s):
+        return "Strong Match" if s >= 70 else "Partial Match" if s >= 45 else "Weak Match"
 
-        msg.attach(MIMEText(html_body, "html"))
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
-            server.sendmail(settings.GMAIL_USER, job.hr_email, msg.as_string())
-
-        print(f"  📧 Report sent to {job.hr_email}")
-        return True
-
-    except Exception as e:
-        print(f"  Email error: {e}")
-        return False
-
-def build_email_html(job, candidates: List) -> str:
-    """Build a clean HTML email report."""
     rows = ""
     for c in candidates:
-        score = round(c.match_score or 0, 1)
-        color = "#22c55e" if score >= 70 else "#f59e0b" if score >= 50 else "#ef4444"
-        red_flags_html = f"<p style='color:#ef4444;font-size:12px;'>⚠️ {c.red_flags}</p>" if c.red_flags else ""
-        linkedin_html = f"<a href='{c.linkedin_url}' style='color:#0077b5;'>LinkedIn</a>" if c.linkedin_url else "—"
-        github_html = f"<a href='{c.github_url}' style='color:#333;'>GitHub</a>" if c.github_url else "—"
+        score = c.get("match_score", 0)
+        red_flag = f'<div style="margin-top:8px;padding:8px;background:#fdf0ee;border-left:3px solid #c0392b;font-size:13px;color:#a93226;">⚠️ {c.get("red_flags")}</div>' if c.get("red_flags") else ""
+        profiles = ""
+        if c.get("linkedin_url"): profiles += f'<a href="{c["linkedin_url"]}" style="color:#2d7a4f;margin-right:12px;">LinkedIn</a>'
+        if c.get("github_url"):   profiles += f'<a href="{c["github_url"]}" style="color:#2d7a4f;">GitHub</a>'
+        rows += f"""<tr style="border-bottom:1px solid #ede8de;">
+          <td style="padding:16px;font-weight:700;font-size:18px;text-align:center;">#{c.get("rank","—")}</td>
+          <td style="padding:16px;">
+            <div style="font-weight:600;font-size:15px;">{c.get("name") or c.get("full_name") or "Unknown"}</div>
+            <div style="font-size:13px;color:#8aaa95;">{c.get("email","—")}{" · "+str(c.get("experience_years"))+" yrs" if c.get("experience_years") else ""}</div>
+            {f'<div style="margin-top:6px;font-size:12px;">{profiles}</div>' if profiles else ""}
+            <div style="margin-top:8px;font-size:13px;color:#4a6355;">{c.get("justification","")}</div>
+            {red_flag}
+          </td>
+          <td style="padding:16px;text-align:center;width:90px;">
+            <div style="font-size:28px;font-weight:700;color:{score_color(score)};">{score}%</div>
+            <div style="font-size:11px;color:{score_color(score)};font-weight:600;">{score_label(score)}</div>
+          </td>
+        </tr>"""
 
-        rows += f"""
-        <tr style="border-bottom:1px solid #e5e7eb;">
-            <td style="padding:12px;font-weight:bold;">#{c.rank}</td>
-            <td style="padding:12px;">{c.full_name or "Unknown"}</td>
-            <td style="padding:12px;">{c.email or "—"}</td>
-            <td style="padding:12px;text-align:center;">
-                <span style="background:{color};color:white;padding:4px 10px;border-radius:20px;font-weight:bold;">
-                    {score}%
-                </span>
-            </td>
-            <td style="padding:12px;font-size:13px;">
-                {c.score_justification or "—"}
-                {red_flags_html}
-            </td>
-            <td style="padding:12px;">{linkedin_html} &nbsp; {github_html}</td>
-        </tr>
-        """
+    return f"""<!DOCTYPE html><html><body style="background:#faf7f2;font-family:Arial,sans-serif;margin:0;padding:0;">
+  <div style="max-width:680px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="background:#1a2e1a;padding:32px 40px;">
+      <div style="font-size:22px;font-weight:700;color:#fff;">🌿 TalentMesh</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);">AI Recruitment Screening Report</div>
+    </div>
+    <div style="padding:28px 40px 0;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#8aaa95;letter-spacing:0.1em;">Screening results for</div>
+      <div style="font-size:26px;font-weight:700;color:#1c2b1c;margin-top:6px;">{job_title}</div>
+      <div style="font-size:13px;color:#8aaa95;margin-top:4px;">{len(candidates)} candidates screened and ranked by AI</div>
+    </div>
+    <div style="padding:24px 40px 32px;">
+      <table style="width:100%;border-collapse:collapse;background:#faf7f2;border-radius:12px;overflow:hidden;">
+        <thead><tr style="background:#f3ede3;">
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">#</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;text-align:left;">Candidate</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">Score</th>
+        </tr></thead>
+        <tbody>{rows}</tbody>
+      </table>
+    </div>
+    <div style="background:#f3ede3;padding:20px 40px;text-align:center;">
+      <div style="font-size:12px;color:#8aaa95;">Generated by <a href="https://talentmesh.nimbus-24.com" style="color:#2d7a4f;">TalentMesh</a> · AI-powered recruitment screening</div>
+    </div>
+  </div>
+</body></html>"""
 
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <body style="font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:20px;color:#111;">
-        <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;border-radius:12px;margin-bottom:30px;">
-            <h1 style="color:white;margin:0;font-size:26px;">🎯 TalentMesh Screening Report</h1>
-            <p style="color:rgba(255,255,255,0.85);margin:8px 0 0 0;">
-                Role: <strong>{job.title}</strong> &nbsp;|&nbsp; Top {len(candidates)} Candidates
-            </p>
-        </div>
 
-        <table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-            <thead>
-                <tr style="background:#f9fafb;font-size:13px;text-transform:uppercase;color:#6b7280;">
-                    <th style="padding:12px;text-align:left;">Rank</th>
-                    <th style="padding:12px;text-align:left;">Name</th>
-                    <th style="padding:12px;text-align:left;">Email</th>
-                    <th style="padding:12px;text-align:center;">Match</th>
-                    <th style="padding:12px;text-align:left;">Justification</th>
-                    <th style="padding:12px;text-align:left;">Profiles</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows}
-            </tbody>
-        </table>
+async def send_report_email(to_email: str, job_title: str, candidates: List[dict]) -> bool:
+    if not settings.GMAIL_USER or not settings.GMAIL_APP_PASSWORD:
+        raise ValueError("GMAIL_USER and GMAIL_APP_PASSWORD must be set in Render environment variables.")
 
-        <div style="margin-top:30px;padding:20px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;">
-            <p style="margin:0;font-size:14px;color:#166534;">
-                💡 <strong>Need screening questions?</strong> Reply to this email with the candidate name 
-                and TalentMesh will generate 2-3 tailored technical questions with answer blueprints.
-            </p>
-        </div>
+    msg            = MIMEMultipart("alternative")
+    msg["Subject"] = f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked"
+    msg["From"]    = f"TalentMesh <{settings.GMAIL_USER}>"
+    msg["To"]      = to_email
 
-        <p style="color:#9ca3af;font-size:12px;margin-top:20px;text-align:center;">
-            Powered by TalentMesh AI &nbsp;|&nbsp; talentmesh.ai
-        </p>
-    </body>
-    </html>
-    """
+    plain = f"TalentMesh Screening Report — {job_title}\n\n"
+    for c in candidates:
+        plain += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
+
+    msg.attach(MIMEText(plain, "plain"))
+    msg.attach(MIMEText(build_email_html(job_title, candidates), "html"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
+        server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
+
+    return True
