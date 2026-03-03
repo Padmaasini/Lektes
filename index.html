@@ -1020,6 +1020,100 @@
     .results-top { flex-direction: column; }
     footer { padding: 24px 20px; }
   }
+
+  /* ── MANAGE MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,46,26,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(26,46,26,0.2);
+    animation: fadeUp 0.3s ease;
+  }
+  .modal-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .modal-title {
+    font-family: var(--font-head);
+    font-weight: 700; font-size: 22px;
+    color: var(--text-dark);
+  }
+  .modal-close {
+    background: none; border: none;
+    font-size: 22px; color: var(--text-light);
+    cursor: pointer; transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text-dark); }
+  .danger-zone {
+    background: var(--red-light);
+    border: 1.5px solid #f5c0b8;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .danger-zone-text { flex: 1; }
+  .danger-zone-title { font-weight: 700; font-size: 15px; color: var(--red); margin-bottom: 4px; }
+  .danger-zone-sub { font-size: 13px; color: #a05050; }
+  .btn-danger {
+    background: var(--red); color: #fff;
+    font-family: var(--font-body); font-weight: 600;
+    font-size: 14px; padding: 10px 20px;
+    border: none; border-radius: 8px;
+    cursor: pointer; transition: all 0.2s;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-danger:hover { background: #a93226; box-shadow: 0 4px 12px rgba(192,57,43,0.3); }
+  .jobs-list-title {
+    font-weight: 600; font-size: 13px;
+    color: var(--text-mid); margin-bottom: 10px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .jobs-list { display: flex; flex-direction: column; gap: 10px; }
+  .job-row {
+    display: flex; align-items: center;
+    gap: 12px; padding: 14px 16px;
+    background: var(--cream2);
+    border: 1.5px solid var(--border-light);
+    border-radius: 10px; transition: border-color 0.2s;
+  }
+  .job-row:hover { border-color: var(--border); }
+  .job-row-info { flex: 1; min-width: 0; }
+  .job-row-title {
+    font-weight: 600; font-size: 14px; color: var(--text-dark);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .job-row-meta { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+  .btn-del-job {
+    background: none; border: 1.5px solid #f5c0b8;
+    color: var(--red); font-size: 12px; font-weight: 600;
+    padding: 6px 12px; border-radius: 6px;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+  .btn-del-job:hover { background: var(--red-light); }
+  .modal-empty { text-align: center; padding: 32px; color: var(--text-light); font-size: 14px; }
+
 </style>
 </head>
 <body>
@@ -1031,13 +1125,14 @@
   </div>
   <div class="nav-right">
     <span class="nav-pill">AI Screening</span>
+    <button onclick="openManage()" style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">⚙ Manage Jobs</button>
     <a href="https://talentmesh.nimbus-24.com/docs" target="_blank" class="nav-link">API Docs →</a>
   </div>
 </nav>
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-tag">Powered by Gemini AI</div>
+    <div class="hero-tag">Powered by Groq AI</div>
     <h1>Find the <em>right person</em><br>for every role.</h1>
     <p class="hero-sub">Screening CVs made easy, with just a swish and a flick .</p>
     <div class="hero-buttons">
@@ -1552,6 +1647,86 @@ function toast(msg, type='success') {
   t.className='toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'),3500);
 }
+
+// ── MANAGE MODAL ──
+async function openManage() {
+  document.getElementById('manageModal').classList.add('open');
+  await loadJobs();
+}
+function closeManage() {
+  document.getElementById('manageModal').classList.remove('open');
+}
+function closeManageOutside(e) {
+  if (e.target.id === 'manageModal') closeManage();
+}
+async function loadJobs() {
+  const list = document.getElementById('jobsList');
+  list.innerHTML = '<div class="modal-empty">Loading...</div>';
+  try {
+    const res = await fetch(`${API}/api/v1/jobs/`);
+    if (!res.ok) throw new Error();
+    const jobs = await res.json();
+    if (!jobs.length) {
+      list.innerHTML = '<div class="modal-empty">No jobs yet. Create one to get started!</div>';
+      return;
+    }
+    list.innerHTML = jobs.map(j => `
+      <div class="job-row" id="job-row-${j.id}">
+        <div class="job-row-info">
+          <div class="job-row-title">${j.title}</div>
+          <div class="job-row-meta">${j.hr_email || ''} · ${j.status || 'pending'} · ID: ${j.id.slice(0,8)}…</div>
+        </div>
+        <button class="btn-del-job" onclick="deleteJob('${j.id}','${j.title.replace(/'/g, "\'")}')">Delete</button>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="modal-empty">Could not load jobs — is the API running?</div>';
+  }
+}
+async function deleteJob(jobId, title) {
+  if (!confirm(`Delete "${title}" and all its candidates?`)) return;
+  try {
+    const res = await fetch(`${API}/api/v1/jobs/${jobId}`, { method: 'DELETE' });
+    if (res.status === 204 || res.ok) {
+      document.getElementById(`job-row-${jobId}`)?.remove();
+      toast(`Deleted "${title}"`, 'success');
+      if (!document.getElementById('jobsList').children.length)
+        document.getElementById('jobsList').innerHTML = '<div class="modal-empty">No jobs yet.</div>';
+    } else throw new Error();
+  } catch(e) { toast('Could not delete job', 'error'); }
+}
+async function clearAllData() {
+  if (!confirm('Delete ALL jobs and candidates? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`${API}/api/v1/jobs/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    toast(`Cleared ${data.jobs_deleted} jobs and ${data.candidates_deleted} candidates ✓`, 'success');
+    document.getElementById('jobsList').innerHTML = '<div class="modal-empty">No jobs yet. Create one to get started!</div>';
+  } catch(e) { toast('Could not clear data', 'error'); }
+}
+
 </script>
+
+<!-- MANAGE MODAL -->
+<div class="modal-overlay" id="manageModal" onclick="closeManageOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ Manage Jobs & Data</div>
+      <button class="modal-close" onclick="closeManage()">✕</button>
+    </div>
+    <div class="danger-zone">
+      <div class="danger-zone-text">
+        <div class="danger-zone-title">🗑 Clear All Data</div>
+        <div class="danger-zone-sub">Deletes every job and all candidates. Cannot be undone.</div>
+      </div>
+      <button class="btn-danger" onclick="clearAllData()">Clear Everything</button>
+    </div>
+    <div class="jobs-list-title">Existing Jobs</div>
+    <div class="jobs-list" id="jobsList">
+      <div class="modal-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
