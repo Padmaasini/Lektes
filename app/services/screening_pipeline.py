@@ -99,10 +99,26 @@ async def node_extract_and_score(state: ScreeningState) -> ScreeningState:
         if i > 0:
             await asyncio.sleep(3.0)
 
+        # Handle image-based PDFs (Canva etc.) — run vision OCR now
         raw_text = (c.get("cv_raw_text") or "").strip()
+        if not raw_text and c.get("cv_file_path"):
+            print(f"  No text for {label} — running vision OCR")
+            from app.services.cv_parser import extract_with_vision_ocr
+            raw_text = await asyncio.to_thread(
+                extract_with_vision_ocr, c["cv_file_path"]
+            )
+            # Save OCR result back to DB for future use
+            db_ocr = SessionLocal()
+            try:
+                db_ocr.query(Candidate).filter(
+                    Candidate.id == c["id"]
+                ).update({"cv_raw_text": raw_text})
+                db_ocr.commit()
+            finally:
+                db_ocr.close()
         if not raw_text:
-            print(f"  No CV text for {label} — skipping")
-            scored.append(_fallback(c, "No CV text found in database"))
+            print(f"  Still no text for {label} — skipping")
+            scored.append(_fallback(c, "Could not extract text from CV"))
             continue
 
         human = HumanMessage(content=(
