@@ -85,8 +85,21 @@ async def node_extract_and_score(state: ScreeningState) -> ScreeningState:
     )
 
     system = SystemMessage(content=(
-        "You are TalentMesh, an expert AI recruitment screening agent. "
-        "Extract structured data from CVs and score candidates against job requirements. "
+        "You are TalentMesh, a senior recruitment specialist with 20 years of experience "
+        "screening candidates across technology, data, and business roles. "
+        "You score candidates based on genuine potential, not just keyword matching. "
+        "Your scoring follows these principles:\n"
+        "1. TRANSFERABLE SKILLS: You have a comprehensive list of equivalent tools in the scoring prompt. "
+        "Always check equivalents before marking a skill as missing. "
+        "A candidate with deep expertise in an equivalent tool scores the same as one with the exact tool.\n"
+        "2. LEARNING POTENTIAL: A candidate with 80% of required skills plus strong "
+        "adjacent experience should score 65-75%, not 20-30%. "
+        "Penalise missing skills proportionally — not harshly for tools that can be learned.\n"
+        "3. EXPERIENCE DEPTH: 5 years in a directly adjacent role is worth more than "
+        "1 year in the exact role. Weight quality of experience over job title matching.\n"
+        "4. HONEST JUSTIFICATION: Explain the score logically. "
+        "State what they have, what transfers, what is genuinely missing, "
+        "and whether the gap is learnable or fundamental.\n"
         "Return valid JSON only. No markdown, no backticks, no explanation."
     ))
 
@@ -122,26 +135,89 @@ async def node_extract_and_score(state: ScreeningState) -> ScreeningState:
             continue
 
         human = HumanMessage(content=(
-            "Extract structured data and score this candidate for the role below.\n\n"
+            "Evaluate this candidate thoroughly for the role below.\n\n"
             f"JOB TITLE: {state['job_title']}\n"
             f"JOB DESCRIPTION: {state['job_description'][:1000]}\n"
             f"REQUIRED SKILLS: {state['required_skills']}\n"
             f"MINIMUM EXPERIENCE: {state['min_experience_years']} years\n\n"
             f"CV TEXT:\n{raw_text[:3000]}\n\n"
+            "SCORING GUIDE:\n"
+            "- 85-100%: Has all required skills (including equivalents) + strong relevant experience\n"
+            "- 70-84%:  Has most required skills, strong adjacent experience, small learnable gaps\n"
+            "- 55-69%:  Has 60-70% of required skills, meaningful transferable experience\n"
+            "- 40-54%:  Has some relevant skills but significant gaps or different specialisation\n"
+            "- 20-39%:  Adjacent field, limited direct relevance, steep learning curve\n"
+            "- 0-19%:   Wrong role entirely, no meaningful transferable skills\n\n"
+            "TRANSFERABLE SKILLS — treat these as equivalent when scoring:\n"
+            "\n"
+            "DATA & BI:\n"
+            "- BI Tools:        Power BI ↔ Tableau ↔ Cognos ↔ Qlik ↔ Looker ↔ MicroStrategy ↔ Metabase ↔ Superset\n"
+            "- SQL Databases:   PostgreSQL ↔ MySQL ↔ Oracle ↔ MSSQL ↔ SQLite ↔ MariaDB\n"
+            "- Cloud Warehouses:Snowflake ↔ BigQuery ↔ Redshift ↔ Azure Synapse ↔ Databricks\n"
+            "- ETL/Pipeline:    dbt ↔ Informatica ↔ Talend ↔ SSIS ↔ Fivetran ↔ Airbyte ↔ Matillion\n"
+            "- Orchestration:   Airflow ↔ Prefect ↔ Dagster ↔ Luigi ↔ Azure Data Factory\n"
+            "- Notebooks:       Jupyter ↔ Google Colab ↔ Databricks Notebooks ↔ Zeppelin\n"
+            "\n"
+            "SOFTWARE ENGINEERING:\n"
+            "- Backend:         Python ↔ Java ↔ Go ↔ C# ↔ Node.js ↔ Ruby (all are backend languages)\n"
+            "- Frontend:        React ↔ Vue ↔ Angular ↔ Svelte (all are component frameworks)\n"
+            "- APIs:            REST ↔ GraphQL ↔ gRPC (all are API paradigms)\n"
+            "- Frameworks:      FastAPI ↔ Django ↔ Flask ↔ Express ↔ Spring Boot ↔ Rails\n"
+            "- ORMs:            SQLAlchemy ↔ Django ORM ↔ Hibernate ↔ Sequelize\n"
+            "- Testing:         pytest ↔ unittest ↔ Jest ↔ JUnit ↔ Mocha (same concept different language)\n"
+            "\n"
+            "CLOUD & DEVOPS:\n"
+            "- Cloud Platforms: AWS ↔ Azure ↔ GCP (transferable, not identical)\n"
+            "- Containers:      Docker ↔ Podman\n"
+            "- Orchestration:   Kubernetes ↔ EKS ↔ GKE ↔ AKS ↔ OpenShift\n"
+            "- IaC:             Terraform ↔ Pulumi ↔ CloudFormation ↔ Bicep\n"
+            "- CI/CD:           GitHub Actions ↔ GitLab CI ↔ Jenkins ↔ CircleCI ↔ Azure DevOps\n"
+            "- Monitoring:      Datadog ↔ Grafana ↔ Prometheus ↔ New Relic ↔ CloudWatch\n"
+            "- Logging:         ELK Stack ↔ Splunk ↔ Loki ↔ Sumo Logic\n"
+            "\n"
+            "MACHINE LEARNING & AI:\n"
+            "- ML Frameworks:   PyTorch ↔ TensorFlow ↔ JAX (deep learning frameworks)\n"
+            "- ML Libraries:    scikit-learn ↔ XGBoost ↔ LightGBM ↔ CatBoost\n"
+            "- MLOps:           MLflow ↔ Weights & Biases ↔ Neptune ↔ Kubeflow\n"
+            "- Vector DBs:      Pinecone ↔ Weaviate ↔ Chroma ↔ Qdrant ↔ Milvus\n"
+            "- LLM Frameworks:  LangChain ↔ LlamaIndex ↔ Haystack\n"
+            "- Feature Stores:  Feast ↔ Tecton ↔ Hopsworks\n"
+            "\n"
+            "PRODUCT & PROJECT MANAGEMENT:\n"
+            "- Agile Tools:     Jira ↔ Linear ↔ Trello ↔ Asana ↔ Monday ↔ Azure Boards\n"
+            "- Docs/Wiki:       Confluence ↔ Notion ↔ Coda ↔ SharePoint\n"
+            "- Design:          Figma ↔ Sketch ↔ Adobe XD ↔ InVision\n"
+            "- Analytics:       Google Analytics ↔ Mixpanel ↔ Amplitude ↔ Heap\n"
+            "\n"
+            "MESSAGING & STREAMING:\n"
+            "- Message Queues:  Kafka ↔ RabbitMQ ↔ AWS SQS ↔ Azure Service Bus ↔ Pub/Sub\n"
+            "- Streaming:       Kafka Streams ↔ Apache Flink ↔ Spark Streaming\n"
+            "\n"
+            "CRM & BUSINESS TOOLS:\n"
+            "- CRM:             Salesforce ↔ HubSpot ↔ Dynamics 365 ↔ Zoho\n"
+            "- ERP:             SAP ↔ Oracle ERP ↔ Microsoft Dynamics ↔ NetSuite\n"
+            "- HR Systems:      Workday ↔ SAP SuccessFactors ↔ BambooHR ↔ ADP\n"
+            "\n"
+            "IMPORTANT NUANCE:\n"
+            "- Cloud platforms (AWS/Azure/GCP) are transferable at concept level but not identical — "
+            "note the specific platform mismatch in skills_missing if relevant but do not penalise heavily.\n"
+            "- A candidate with deep expertise in one language/framework can learn an equivalent — "
+            "treat as a partial match, not a miss.\n"
+            "- Years of experience in an equivalent role/tool should count toward the experience requirement.\n\n"
             "Return ONLY this JSON object:\n"
             "{\n"
             '  "full_name": "candidate full name from CV",\n'
             '  "email": "email address or null",\n'
             '  "location": "city and country or null",\n'
-            '  "skills": "comma separated list of all technical skills",\n'
+            '  "skills": "comma separated list of ALL technical skills found",\n'
             '  "experience_years": 4,\n'
             '  "education": "degree, field, university, year",\n'
-            '  "work_history": "2-3 sentence summary of work experience",\n'
+            '  "work_history": "2-3 sentence summary of work experience and companies",\n'
             '  "match_score": 75,\n'
-            '  "justification": "2-3 sentences explaining why this score was given",\n'
-            '  "red_flags": "any concerns about this candidate or null",\n'
-            '  "skills_matched": "required skills this candidate has",\n'
-            '  "skills_missing": "required skills this candidate lacks"\n'
+            '  "justification": "3-4 sentences: what they have, what transfers, what is missing and whether that gap is learnable or fundamental",\n'
+            '  "red_flags": "genuine concerns only — not having an exact tool when they have an equivalent is NOT a red flag. Null if none.",\n'
+            '  "skills_matched": "required skills this candidate has, including equivalent tools",\n'
+            '  "skills_missing": "required skills with no equivalent found in the CV"\n'
             "}"
         ))
 

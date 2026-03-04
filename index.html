@@ -1164,44 +1164,69 @@
         <div class="card-icon">📋</div>
         <div>
           <div class="card-title">Tell us about the role</div>
-          <div class="card-subtitle">Fill in the job details — no JSON needed</div>
+          <div class="card-subtitle">Paste a job ad or fill in the details manually</div>
         </div>
       </div>
 
-      <div class="form-row">
+      <!-- Input mode tabs -->
+      <div class="input-tabs">
+        <div class="input-tab active" id="tab-paste" onclick="switchTab('paste')">📄 Paste Job Ad</div>
+        <div class="input-tab" id="tab-manual" onclick="switchTab('manual')">✏️ Manual Entry</div>
+      </div>
+
+      <!-- Tab: Paste job ad -->
+      <div class="tab-panel active" id="panel-paste">
         <div class="form-group">
-          <label>Job Title <span class="required">*</span></label>
-          <input type="text" id="jobTitle" placeholder="e.g. Senior Python Developer" />
+          <label>Paste the full job posting below</label>
+          <textarea class="paste-area" id="jobPasteText"
+            placeholder="Paste the job description directly from your portal, LinkedIn, or any job board…&#10;&#10;TalentMesh will automatically extract the job title, required skills, experience level, and description."></textarea>
+          <div class="parse-hint">💡 Works with any format — LinkedIn posts, company portals, raw text</div>
         </div>
         <div class="form-group">
           <label>HR Email <span class="required">*</span></label>
-          <input type="email" id="hrEmail" placeholder="hr@yourcompany.com" />
+          <input type="email" id="hrEmailPaste" placeholder="hr@yourcompany.com" />
         </div>
-      </div>
-
-      <div class="form-group">
-        <label>Job Description <span class="required">*</span></label>
-        <textarea id="jobDesc" placeholder="Paste or type the full job description here — responsibilities, requirements, context..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Required Skills</label>
-        <div class="skills-wrap" id="reqWrap" onclick="document.getElementById('reqInput').focus()">
-          <input id="reqInput" placeholder="Type a skill, press Enter…" autocomplete="off" />
+        <div class="parsed-preview" id="parsedPreview">
+          <div class="parsed-preview-title">✅ Extracted from job posting</div>
+          <div id="parsedContent"></div>
         </div>
-        <div class="hint">Press Enter or comma after each skill</div>
+        <button class="btn-parse" id="parseBtn" onclick="parseJobAd()">🤖 Extract with AI</button>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nice-to-Have Skills</label>
-          <div class="skills-wrap" id="niceWrap" onclick="document.getElementById('niceInput').focus()">
-            <input id="niceInput" placeholder="e.g. Docker, AWS…" autocomplete="off" />
+      <!-- Tab: Manual entry -->
+      <div class="tab-panel" id="panel-manual">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Job Title <span class="required">*</span></label>
+            <input type="text" id="jobTitle" placeholder="e.g. Senior Python Developer" />
+          </div>
+          <div class="form-group">
+            <label>HR Email <span class="required">*</span></label>
+            <input type="email" id="hrEmail" placeholder="hr@yourcompany.com" />
           </div>
         </div>
         <div class="form-group">
-          <label>Min. Experience (years)</label>
-          <input type="text" id="minExp" value="3" />
+          <label>Job Description <span class="required">*</span></label>
+          <textarea id="jobDesc" placeholder="Paste or type the full job description here…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Required Skills</label>
+          <div class="skills-wrap" id="reqWrap" onclick="document.getElementById('reqInput').focus()">
+            <input id="reqInput" placeholder="Type a skill, press Enter…" autocomplete="off" />
+          </div>
+          <div class="hint">Press Enter or comma after each skill</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nice-to-Have Skills</label>
+            <div class="skills-wrap" id="niceWrap" onclick="document.getElementById('niceInput').focus()">
+              <input id="niceInput" placeholder="e.g. Docker, AWS…" autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Min. Experience (years)</label>
+            <input type="text" id="minExp" value="3" />
+          </div>
         </div>
       </div>
 
@@ -1413,36 +1438,111 @@ function renderFiles() {
 
 function removeFile(i) { S.files.splice(i, 1); renderFiles(); }
 
-// ── STEP 1: CREATE JOB ──
-async function createJob() {
-  const title = document.getElementById('jobTitle').value.trim();
-  const desc  = document.getElementById('jobDesc').value.trim();
-  const email = document.getElementById('hrEmail').value.trim();
-  const minExp = parseInt(document.getElementById('minExp').value) || 0;
+// ── TAB SWITCHING ──
+let activeTab = 'paste';
+let parsedJob = null;
+
+function switchTab(tab) {
+  activeTab = tab;
+  ['paste','manual'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+// ── PARSE JOB AD ──
+async function parseJobAd() {
+  const text  = document.getElementById('jobPasteText').value.trim();
   const errEl = document.getElementById('err1');
   errEl.innerHTML = '';
 
-  if (!title) { errEl.innerHTML = '<div class="err-msg">Please enter a job title.</div>'; return; }
-  if (!desc)  { errEl.innerHTML = '<div class="err-msg">Please enter a job description.</div>'; return; }
-  if (!email) { errEl.innerHTML = '<div class="err-msg">Please enter the HR email address.</div>'; return; }
+  if (!text) {
+    errEl.innerHTML = '<div class="err-msg">Please paste a job description first.</div>';
+    return;
+  }
+  const btn = document.getElementById('parseBtn');
+  btn.disabled = true; btn.textContent = '🤖 Extracting…';
 
-  const raw = document.getElementById('reqInput').value.trim();
-  if (raw) { S.reqSkills.push(raw); document.getElementById('reqInput').value = ''; }
+  try {
+    const res = await fetch(`${API}/api/v1/jobs/parse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: text })
+    });
+    if (!res.ok) throw new Error('Could not parse job posting');
+    parsedJob = await res.json();
 
+    // Show preview
+    const preview = document.getElementById('parsedPreview');
+    document.getElementById('parsedContent').innerHTML = `
+      <div class="parsed-row"><strong>Title:</strong> ${parsedJob.title}</div>
+      <div class="parsed-row"><strong>Skills:</strong> ${parsedJob.required_skills}</div>
+      <div class="parsed-row"><strong>Experience:</strong> ${parsedJob.min_experience_years}+ years</div>
+      ${parsedJob.nice_to_have_skills ? `<div class="parsed-row"><strong>Nice to have:</strong> ${parsedJob.nice_to_have_skills}</div>` : ''}
+    `;
+    preview.style.display = 'block';
+    toast('Job posting parsed! ✓', 'success');
+  } catch(e) {
+    errEl.innerHTML = `<div class="err-msg">❌ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🤖 Extract with AI';
+  }
+}
+
+// ── STEP 1: CREATE JOB ──
+async function createJob() {
+  const errEl = document.getElementById('err1');
+  errEl.innerHTML = '';
   const btn = document.querySelector('#screen1 .btn-main');
+
+  let jobPayload = {};
+
+  if (activeTab === 'paste') {
+    // Paste mode — use parsedJob if available, else require parsing first
+    const email = document.getElementById('hrEmailPaste').value.trim();
+    if (!email) { errEl.innerHTML = '<div class="err-msg">Please enter the HR email address.</div>'; return; }
+    if (!parsedJob) {
+      const text = document.getElementById('jobPasteText').value.trim();
+      if (!text) { errEl.innerHTML = '<div class="err-msg">Please paste a job description and click Extract with AI.</div>'; return; }
+      // Auto-parse if not done yet
+      document.getElementById('parseBtn').click();
+      return;
+    }
+    jobPayload = {
+      title:               parsedJob.title,
+      description:         parsedJob.description,
+      required_skills:     parsedJob.required_skills ? parsedJob.required_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      nice_to_have_skills: parsedJob.nice_to_have_skills ? parsedJob.nice_to_have_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      min_experience_years: parsedJob.min_experience_years || 0,
+      hr_email:            email,
+    };
+  } else {
+    // Manual mode
+    const title  = document.getElementById('jobTitle').value.trim();
+    const desc   = document.getElementById('jobDesc').value.trim();
+    const email  = document.getElementById('hrEmail').value.trim();
+    const minExp = parseInt(document.getElementById('minExp').value) || 0;
+    if (!title) { errEl.innerHTML = '<div class="err-msg">Please enter a job title.</div>'; return; }
+    if (!desc)  { errEl.innerHTML = '<div class="err-msg">Please enter a job description.</div>'; return; }
+    if (!email) { errEl.innerHTML = '<div class="err-msg">Please enter the HR email address.</div>'; return; }
+    const raw = document.getElementById('reqInput').value.trim();
+    if (raw) { S.reqSkills.push(raw); document.getElementById('reqInput').value = ''; }
+    jobPayload = {
+      title, description: desc,
+      required_skills:     S.reqSkills,
+      nice_to_have_skills: S.niceSkills,
+      min_experience_years: minExp,
+      hr_email: email,
+    };
+  }
+
   btn.disabled = true; btn.textContent = 'Creating…';
 
   try {
     const res = await fetch(`${API}/api/v1/jobs/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title, description: desc,
-        required_skills: S.reqSkills,
-        nice_to_have_skills: S.niceSkills,
-        min_experience_years: minExp,
-        hr_email: email
-      })
+      body: JSON.stringify(jobPayload)
     });
     if (!res.ok) throw new Error((await res.json()).detail || `Error ${res.status}`);
     const data = await res.json();
@@ -1570,35 +1670,87 @@ function renderResults(report) {
   }
 
   document.getElementById('cList').innerHTML = cands.map((c, i) => {
-    const rank = i + 1;
+    const rank  = c.rank || (i + 1);
     const rankClass = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
     const score = c.match_score || 0;
-    const ringClass = score>=70?'high':score>=45?'mid':'low';
-    const scoreLabel = score>=70?'Strong Match':score>=45?'Partial':'Weak Match';
-    const skills = (c.skills||'').split(',').slice(0,5).filter(Boolean)
+    const ringClass  = score>=70?'high':score>=45?'mid':'low';
+    const scoreLabel = score>=70?'Strong Match':score>=45?'Partial Match':'Weak Match';
+
+    // Skills tags
+    const skills = (c.skills||'').split(',').slice(0,6).filter(Boolean)
       .map(s=>`<span class="c-tag">${s.trim()}</span>`).join('');
-    const profiles = [
-      c.linkedin_url?`<a href="${c.linkedin_url}" target="_blank" class="c-profile-link">🔗 LinkedIn</a>`:'',
-      c.github_url?`<a href="${c.github_url}" target="_blank" class="c-profile-link">💻 GitHub</a>`:'',
+
+    // Pros — main justification text (strip the "Verified profiles:" part out)
+    const justFull  = (c.justification || '');
+    const verIdx    = justFull.indexOf(' Verified profiles:');
+    const prosText  = verIdx > -1 ? justFull.substring(0, verIdx).trim() : justFull.trim();
+    const verText   = verIdx > -1 ? justFull.substring(verIdx).trim() : '';
+
+    // Cons — red flags
+    const consText = (c.red_flags || '').trim();
+
+    // Profile verification badges
+    // A platform is "verified" if its URL exists AND the justification mentions it was verified
+    const jLower = justFull.toLowerCase();
+    function badge(label, url, keyword, icon) {
+      if (!url) return '';
+      const verified = jLower.includes(keyword + ' verified') || jLower.includes('verified: ' + keyword) || jLower.includes(keyword + ':');
+      const cls  = verified ? 'badge-verified' : 'badge-unverified';
+      const tick = verified ? '✓' : '·';
+      return `<span class="badge-platform ${cls}"><span class="badge-dot"></span>${icon} ${label} ${tick}</span>`;
+    }
+    const badges = [
+      badge('LinkedIn',      c.linkedin_url,      'linkedin',      ''),
+      badge('GitHub',        c.github_url,         'github',        ''),
+      badge('Kaggle',        c.kaggle_url,         'kaggle',        ''),
+      badge('StackOverflow', c.stackoverflow_url,  'stackoverflow', ''),
     ].filter(Boolean).join('');
+
+    // Education / experience info strip
+    const eduStrip = [
+      c.education       ? `<span class="edu-item"><span class="edu-ico">🎓</span>${c.education}</span>` : '',
+      c.experience_years? `<span class="edu-item"><span class="edu-ico">💼</span>${c.experience_years} yrs experience</span>` : '',
+    ].filter(Boolean).join('');
+
     return `
       <div class="candidate-card">
-        <div class="c-rank ${rankClass}">${rank}</div>
-        <div>
-          <div class="c-name">${c.name||'Unknown'}</div>
-          <div class="c-meta">${c.email||'—'}${c.experience_years?' · '+c.experience_years+' yrs':''}</div>
-          <div class="c-tags">${skills}</div>
-          ${profiles?`<div class="c-profiles">${profiles}</div>`:''}
-          ${c.justification?`<div class="c-justification">${c.justification}</div>`:''}
-          ${c.red_flags?`<div class="c-redflag">⚠️ ${c.red_flags}</div>`:''}
-        </div>
-        <div class="c-score">
-          <div class="score-ring ${ringClass}">
-            <div class="score-num">${score}</div>
-            <div class="score-pct">%</div>
+
+        <!-- Top row: rank + name + score -->
+        <div class="card-top">
+          <div class="c-rank ${rankClass}">${rank}</div>
+          <div class="c-main">
+            <div class="c-name">${c.name || c.full_name || 'Unknown'}</div>
+            <div class="c-meta">${c.email||'—'}</div>
+            ${skills ? `<div class="c-tags" style="margin-top:8px;">${skills}</div>` : ''}
           </div>
-          <div class="score-label">${scoreLabel}</div>
+          <div class="c-score-block">
+            <div class="score-ring ${ringClass}">
+              <div class="score-num">${score}</div>
+              <div class="score-pct">%</div>
+            </div>
+            <div class="score-label-sm">${scoreLabel}</div>
+          </div>
         </div>
+
+        ${eduStrip ? `<div class="c-edu-strip">${eduStrip}</div>` : ''}
+
+        ${badges ? `<div class="c-badges" style="margin-top:10px;">${badges}</div>` : ''}
+
+        <!-- Pros / Cons detail section -->
+        <div class="c-detail" style="margin-top:${(eduStrip||badges)?'10px':'0'}">
+          ${prosText ? `
+          <div class="pros-box">
+            <span class="detail-label">✅ Strengths</span>
+            ${prosText}
+            ${verText ? `<div style="margin-top:6px;font-size:12px;opacity:0.8;">${verText}</div>` : ''}
+          </div>` : ''}
+          ${consText ? `
+          <div class="cons-box">
+            <span class="detail-label">⚠️ Concerns</span>
+            ${consText}
+          </div>` : ''}
+        </div>
+
       </div>`;
   }).join('');
 }
@@ -1616,6 +1768,11 @@ async function emailReport() {
 
 function reset() {
   S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [] };
+  parsedJob = null;
+  document.getElementById('jobPasteText').value = '';
+  document.getElementById('hrEmailPaste').value = '';
+  document.getElementById('parsedPreview').style.display = 'none';
+  switchTab('paste');
   ['jobTitle','jobDesc','hrEmail'].forEach(id => document.getElementById(id).value='');
   document.getElementById('minExp').value = '3';
   ['reqWrap','niceWrap'].forEach((wId,i) => {
