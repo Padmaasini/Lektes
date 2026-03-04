@@ -14,30 +14,45 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
     rows = ""
     for c in candidates:
         score = c.get("match_score", 0)
-        red_flag = f'<div style="margin-top:8px;padding:8px;background:#fdf0ee;border-left:3px solid #c0392b;font-size:13px;color:#a93226;">⚠️ {c.get("red_flags")}</div>' if c.get("red_flags") else ""
+        red_flag = (
+            f'<div style="margin-top:8px;padding:8px 10px;background:#fdf0ee;'
+            f'border-left:3px solid #c0392b;font-size:13px;color:#a93226;">'
+            f'⚠️ {c.get("red_flags")}</div>'
+        ) if c.get("red_flags") else ""
         profiles = ""
-        if c.get("linkedin_url"): profiles += f'<a href="{c["linkedin_url"]}" style="color:#2d7a4f;margin-right:12px;">LinkedIn</a>'
-        if c.get("github_url"):   profiles += f'<a href="{c["github_url"]}" style="color:#2d7a4f;">GitHub</a>'
+        if c.get("linkedin_url"):
+            profiles += f'<a href="{c["linkedin_url"]}" style="color:#2d7a4f;margin-right:12px;">LinkedIn</a>'
+        if c.get("github_url"):
+            profiles += f'<a href="{c["github_url"]}" style="color:#2d7a4f;margin-right:12px;">GitHub</a>'
+        if c.get("kaggle_url"):
+            profiles += f'<a href="{c["kaggle_url"]}" style="color:#2d7a4f;margin-right:12px;">Kaggle</a>'
+        if c.get("stackoverflow_url"):
+            profiles += f'<a href="{c["stackoverflow_url"]}" style="color:#2d7a4f;">StackOverflow</a>'
+
         rows += f"""<tr style="border-bottom:1px solid #ede8de;">
-          <td style="padding:16px;font-weight:700;font-size:18px;text-align:center;">#{c.get("rank","—")}</td>
+          <td style="padding:16px;font-weight:700;font-size:18px;color:#1a2e1a;text-align:center;width:42px;">
+            #{c.get("rank","—")}
+          </td>
           <td style="padding:16px;">
-            <div style="font-weight:600;font-size:15px;">{c.get("name") or c.get("full_name") or "Unknown"}</div>
-            <div style="font-size:13px;color:#8aaa95;">{c.get("email","—")}{" · "+str(c.get("experience_years"))+" yrs" if c.get("experience_years") else ""}</div>
+            <div style="font-weight:600;font-size:15px;color:#1c2b1c;">{c.get("name") or c.get("full_name") or "Unknown"}</div>
+            <div style="font-size:13px;color:#8aaa95;margin-top:2px;">
+              {c.get("email","—")}{" · " + str(c.get("experience_years")) + " yrs exp" if c.get("experience_years") else ""}
+            </div>
             {f'<div style="margin-top:6px;font-size:12px;">{profiles}</div>' if profiles else ""}
-            <div style="margin-top:8px;font-size:13px;color:#4a6355;">{c.get("justification","")}</div>
+            <div style="margin-top:8px;font-size:13px;color:#4a6355;line-height:1.5;">{c.get("justification","")}</div>
             {red_flag}
           </td>
           <td style="padding:16px;text-align:center;width:90px;">
             <div style="font-size:28px;font-weight:700;color:{score_color(score)};">{score}%</div>
-            <div style="font-size:11px;color:{score_color(score)};font-weight:600;">{score_label(score)}</div>
+            <div style="font-size:11px;color:{score_color(score)};font-weight:600;margin-top:2px;">{score_label(score)}</div>
           </td>
         </tr>"""
 
-    return f"""<!DOCTYPE html><html><body style="background:#faf7f2;font-family:Arial,sans-serif;margin:0;padding:0;">
-  <div style="max-width:680px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#faf7f2;font-family:Arial,sans-serif;">
+  <div style="max-width:680px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(26,46,26,0.08);">
     <div style="background:#1a2e1a;padding:32px 40px;">
-      <div style="font-size:22px;font-weight:700;color:#fff;">🌿 TalentMesh</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.5);">AI Recruitment Screening Report</div>
+      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">🌿 TalentMesh</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;">AI Recruitment Screening Report</div>
     </div>
     <div style="padding:28px 40px 0;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#8aaa95;letter-spacing:0.1em;">Screening results for</div>
@@ -47,15 +62,18 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
     <div style="padding:24px 40px 32px;">
       <table style="width:100%;border-collapse:collapse;background:#faf7f2;border-radius:12px;overflow:hidden;">
         <thead><tr style="background:#f3ede3;">
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">#</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;text-align:left;">Candidate</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">Score</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;">#</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;text-align:left;">Candidate</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;">Score</th>
         </tr></thead>
         <tbody>{rows}</tbody>
       </table>
     </div>
     <div style="background:#f3ede3;padding:20px 40px;text-align:center;">
-      <div style="font-size:12px;color:#8aaa95;">Generated by <a href="https://talentmesh.nimbus-24.com" style="color:#2d7a4f;">TalentMesh</a> · AI-powered recruitment screening</div>
+      <div style="font-size:12px;color:#8aaa95;">
+        Generated by <a href="https://talentmesh.nimbus-24.com" style="color:#2d7a4f;">TalentMesh</a>
+        · AI-powered recruitment screening
+      </div>
     </div>
   </div>
 </body></html>"""
@@ -63,7 +81,9 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
 
 async def send_report_email(to_email: str, job_title: str, candidates: List[dict]) -> bool:
     if not settings.GMAIL_USER or not settings.GMAIL_APP_PASSWORD:
-        raise ValueError("GMAIL_USER and GMAIL_APP_PASSWORD must be set in Render environment variables.")
+        raise ValueError(
+            "GMAIL_USER and GMAIL_APP_PASSWORD must be set in Render environment variables."
+        )
 
     msg            = MIMEMultipart("alternative")
     msg["Subject"] = f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked"
@@ -73,6 +93,7 @@ async def send_report_email(to_email: str, job_title: str, candidates: List[dict
     plain = f"TalentMesh Screening Report — {job_title}\n\n"
     for c in candidates:
         plain += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
+    plain += f"\nView full results at: https://talentmesh.nimbus-24.com"
 
     msg.attach(MIMEText(plain, "plain"))
     msg.attach(MIMEText(build_email_html(job_title, candidates), "html"))

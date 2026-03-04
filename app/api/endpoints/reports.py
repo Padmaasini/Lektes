@@ -151,3 +151,20 @@ async def generate_screening_questions(
         "job_title":      job.title,
         "questions":      questions
     }
+
+
+@router.get("/debug/email-config")
+async def debug_email_config():
+    """
+    Temporary debug endpoint — check if Gmail credentials are loaded.
+    Visit: /api/v1/reports/debug/email-config
+    Remove this after fixing email.
+    """
+    from app.core.config import settings
+    return {
+        "GMAIL_USER_set":         bool(settings.GMAIL_USER),
+        "GMAIL_USER_value":       settings.GMAIL_USER or "NOT SET",
+        "GMAIL_APP_PASSWORD_set": bool(settings.GMAIL_APP_PASSWORD),
+        "GMAIL_APP_PASSWORD_len": len(settings.GMAIL_APP_PASSWORD) if settings.GMAIL_APP_PASSWORD else 0,
+        "GROQ_API_KEY_set":       bool(settings.GROQ_API_KEY),
+    }

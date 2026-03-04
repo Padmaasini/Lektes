@@ -190,54 +190,99 @@ async def node_extract_and_score(state: ScreeningState) -> ScreeningState:
     return {**state, "candidates_scored": scored}
 
 
-# ── NODE 2: VERIFY PROFILES ───────────────────────────────────────────────────
+# ── NODE 2: VERIFY PROFILES ─────────────────────────────────────────────────
 async def node_verify_profiles(state: ScreeningState) -> ScreeningState:
     """
-    LangGraph Node 2 — External Profile Verification.
+    LangGraph Node 2 — External Profile Verification across 4 platforms.
 
-    Checks LinkedIn and GitHub for each candidate.
-    Awards bonus points for verified active profiles:
-      +5 for verified LinkedIn
-      +5 for active GitHub (more than 5 public repos)
-      Max +10 total bonus
+      Platform       Condition                        Bonus
+      ──────────────────────────────────────────────────────
+      LinkedIn       Profile URL returns 200           +3
+      GitHub         5+ repos                          +4  (+1 per 20 repos, max +6)
+      Kaggle         Verified + tier                   +2 to +5
+      StackOverflow  Verified + reputation             +1 to +5
 
-    Skips gracefully if credentials are not set on Render.
+      Maximum total bonus:  +10 (hard capped)
+
+    All four checks run concurrently per candidate.
+    Each check skips gracefully if credentials are not configured on Render.
     """
-    from app.services.linkedin_service import verify_linkedin
-    from app.services.github_service import verify_github
+    from app.services.linkedin_service      import verify_linkedin
+    from app.services.github_service        import verify_github
+    from app.services.kaggle_service        import verify_kaggle, kaggle_tier_score
+    from app.services.stackoverflow_service import verify_stackoverflow, stackoverflow_reputation_score
 
     total = len(state["candidates_scored"])
     print(f"[Node 2] verify_profiles — {total} candidates")
 
+    async def _safe(coro):
+        """Run a coroutine and return None on any error."""
+        try:
+            return await coro
+        except Exception:
+            return None
+
     verified = []
     for c in state["candidates_scored"]:
         bonus = 0
+        notes = []
 
-        if c.get("linkedin_url"):
-            try:
-                data = await asyncio.wait_for(
-                    verify_linkedin(c["linkedin_url"]), timeout=8.0
-                )
-                if data:
-                    bonus += 5
-                    c["justification"] += " LinkedIn profile verified."
-                    print(f"  LinkedIn verified: {c.get('full_name')}")
-            except Exception:
-                pass
+        # Run all four checks concurrently for this candidate
+        linkedin_data, github_data, kaggle_data, so_data = await asyncio.gather(
+            _safe(asyncio.wait_for(verify_linkedin(c.get("linkedin_url") or ""), timeout=8.0))
+            if c.get("linkedin_url") else asyncio.sleep(0, result=None),
+            _safe(asyncio.wait_for(verify_github(c.get("github_url") or ""), timeout=10.0))
+            if c.get("github_url") else asyncio.sleep(0, result=None),
+            _safe(asyncio.wait_for(verify_kaggle(c.get("kaggle_url") or ""), timeout=10.0))
+            if c.get("kaggle_url") else asyncio.sleep(0, result=None),
+            _safe(asyncio.wait_for(verify_stackoverflow(c.get("stackoverflow_url") or ""), timeout=10.0))
+            if c.get("stackoverflow_url") else asyncio.sleep(0, result=None),
+        )
 
-        if c.get("github_url"):
-            try:
-                data = await asyncio.wait_for(
-                    verify_github(c["github_url"]), timeout=8.0
-                )
-                if data and data.get("public_repos", 0) > 5:
-                    bonus += 5
-                    c["justification"] += f" Active GitHub: {data.get('public_repos')} public repos."
-                    print(f"  GitHub verified: {c.get('full_name')} ({data.get('public_repos')} repos)")
-            except Exception:
-                pass
+        # LinkedIn: +3 for confirmed public profile
+        if linkedin_data and linkedin_data.get("exists"):
+            bonus += 3
+            notes.append("LinkedIn verified")
 
+        # GitHub: +4 base + up to +2 for repo volume
+        if github_data:
+            repos = github_data.get("public_repos", 0)
+            if repos >= 5:
+                gh_bonus = min(6, 4 + repos // 20)
+                bonus += gh_bonus
+                langs = ", ".join(github_data.get("top_languages", [])[:3])
+                notes.append(f"GitHub {repos} repos ({langs})")
+
+        # Kaggle: +2 to +5 by tier (Novice → Grandmaster)
+        if kaggle_data:
+            tier    = kaggle_data.get("tier", "Novice")
+            k_bonus = kaggle_tier_score(tier)
+            if k_bonus > 0:
+                bonus += k_bonus
+                notes.append(f"Kaggle {tier}")
+
+        # StackOverflow: +1 to +5 by reputation
+        if so_data:
+            rep      = so_data.get("reputation", 0)
+            so_bonus = stackoverflow_reputation_score(rep)
+            if so_bonus > 0:
+                bonus += so_bonus
+                tags = ", ".join(so_data.get("top_tags", [])[:3])
+                notes.append(f"SO rep {rep:,} ({tags})")
+
+        # Hard cap
+        bonus = min(10, bonus)
+
+        if notes:
+            c["justification"] += " Verified profiles: " + " | ".join(notes) + "."
         c["match_score"] = min(100, c["match_score"] + bonus)
+
+        name = c.get("full_name") or "Unknown"
+        if bonus > 0:
+            print(f"  {name}: +{bonus} pts — {', '.join(notes)}")
+        else:
+            print(f"  {name}: no external profiles verified")
+
         verified.append(c)
 
     return {**state, "candidates_verified": verified}
@@ -363,8 +408,10 @@ async def run_screening_pipeline(job_id: str, screening_id: str):
                     "experience_years": c.experience_years,
                     "education":        c.education,
                     "work_history":     c.work_history,
-                    "linkedin_url":     c.linkedin_url,
-                    "github_url":       c.github_url,
+                    "linkedin_url":       c.linkedin_url,
+                    "github_url":         c.github_url,
+                    "kaggle_url":         c.kaggle_url,
+                    "stackoverflow_url":  getattr(c, "stackoverflow_url", None),
                 }
                 for c in candidates
             ],

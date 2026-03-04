@@ -1,40 +1,36 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 
+
 class Settings(BaseSettings):
-    # App
-    APP_NAME: str = "TalentMesh"
-    APP_VERSION: str = "0.1.0"
-    DEBUG: bool = False
+    APP_NAME:    str = "TalentMesh"
+    APP_VERSION: str = "1.0.0"
+    DEBUG:       bool = False
 
     # Database
     DATABASE_URL: str = "sqlite:///./talentmesh.db"
 
-    # LLM - Groq (Free, fast)
+    # LLM — Groq (required)
     GROQ_API_KEY: Optional[str] = None
 
-
-    # LLM - Gemini (kept as fallback)
-    GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.0-flash"
-
-    # Email - Gmail SMTP
-    GMAIL_USER: Optional[str] = None
+    # Email reporting — Gmail SMTP (required for email)
+    GMAIL_USER:         Optional[str] = None
     GMAIL_APP_PASSWORD: Optional[str] = None
 
-    # LinkedIn
-    LINKEDIN_USERNAME: Optional[str] = None
-    LINKEDIN_PASSWORD: Optional[str] = None
-
-    # GitHub
+    # Profile verification — GitHub (optional, raises rate limit 60→5000/hr)
     GITHUB_TOKEN: Optional[str] = None
 
-    # File Upload
+    # Profile verification — Kaggle (required for Kaggle verification)
+    KAGGLE_USERNAME: Optional[str] = None
+    KAGGLE_KEY:      Optional[str] = None
+
+    # File upload
     MAX_FILE_SIZE_MB: int = 10
-    UPLOAD_DIR: str = "./uploads"
+    UPLOAD_DIR:       str = "./uploads"
 
     class Config:
-        env_file = ".env"
+        env_file      = ".env"
         case_sensitive = True
+
 
 settings = Settings()
