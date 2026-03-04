@@ -156,9 +156,8 @@ async def generate_screening_questions(
 @router.get("/debug/email-config")
 async def debug_email_config():
     """
-    Temporary debug endpoint — check if Gmail credentials are loaded.
+    Debug endpoint — check if Gmail credentials are loaded.
     Visit: /api/v1/reports/debug/email-config
-    Remove this after fixing email.
     """
     from app.core.config import settings
     return {
@@ -167,4 +166,52 @@ async def debug_email_config():
         "GMAIL_APP_PASSWORD_set": bool(settings.GMAIL_APP_PASSWORD),
         "GMAIL_APP_PASSWORD_len": len(settings.GMAIL_APP_PASSWORD) if settings.GMAIL_APP_PASSWORD else 0,
         "GROQ_API_KEY_set":       bool(settings.GROQ_API_KEY),
+    }
+
+
+@router.get("/debug/smtp-test")
+async def debug_smtp_test():
+    """
+    Test SMTP connection and login with exact error reporting.
+    Visit: /api/v1/reports/debug/smtp-test
+    Shows the exact Gmail error so we can diagnose the issue.
+    """
+    import smtplib
+    from app.core.config import settings
+
+    if not settings.GMAIL_USER or not settings.GMAIL_APP_PASSWORD:
+        return {"status": "error", "message": "Credentials not set"}
+
+    results = {}
+
+    # Test port 465 SSL
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
+        results["port_465_ssl"] = "✅ SUCCESS — login worked"
+    except smtplib.SMTPAuthenticationError as e:
+        results["port_465_ssl"] = f"❌ AUTH ERROR: {str(e)}"
+    except Exception as e:
+        results["port_465_ssl"] = f"❌ CONNECTION ERROR: {type(e).__name__}: {str(e)}"
+
+    # Test port 587 TLS
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
+        results["port_587_tls"] = "✅ SUCCESS — login worked"
+    except smtplib.SMTPAuthenticationError as e:
+        results["port_587_tls"] = f"❌ AUTH ERROR: {str(e)}"
+    except Exception as e:
+        results["port_587_tls"] = f"❌ CONNECTION ERROR: {type(e).__name__}: {str(e)}"
+
+    return {
+        "gmail_user": settings.GMAIL_USER,
+        "password_length": len(settings.GMAIL_APP_PASSWORD),
+        "results": results,
+        "next_steps": {
+            "if_auth_error": "App Password is wrong — regenerate at myaccount.google.com → Security → App Passwords",
+            "if_connection_error": "Render is blocking the port — use whichever port shows SUCCESS above",
+        }
     }
