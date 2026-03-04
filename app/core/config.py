@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Profile verification — GitHub (optional, raises rate limit 60→5000/hr)
     GITHUB_TOKEN: Optional[str] = None
 
+    # Email — Resend API (replaces Gmail SMTP, works on Render free tier)
+    RESEND_API_KEY: Optional[str] = None
+
     # Profile verification — Kaggle (required for Kaggle verification)
     KAGGLE_USERNAME: Optional[str] = None
     KAGGLE_KEY:      Optional[str] = None

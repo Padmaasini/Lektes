@@ -1,6 +1,4 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import httpx
 from typing import List
 from app.core.config import settings
 
@@ -19,6 +17,7 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
             f'border-left:3px solid #c0392b;font-size:13px;color:#a93226;">'
             f'⚠️ {c.get("red_flags")}</div>'
         ) if c.get("red_flags") else ""
+
         profiles = ""
         if c.get("linkedin_url"):
             profiles += f'<a href="{c["linkedin_url"]}" style="color:#2d7a4f;margin-right:12px;">LinkedIn</a>'
@@ -62,9 +61,9 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
     <div style="padding:24px 40px 32px;">
       <table style="width:100%;border-collapse:collapse;background:#faf7f2;border-radius:12px;overflow:hidden;">
         <thead><tr style="background:#f3ede3;">
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;">#</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;text-align:left;">Candidate</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;letter-spacing:0.05em;">Score</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">#</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;text-align:left;">Candidate</th>
+          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">Score</th>
         </tr></thead>
         <tbody>{rows}</tbody>
       </table>
@@ -80,48 +79,43 @@ def build_email_html(job_title: str, candidates: List[dict]) -> str:
 
 
 async def send_report_email(to_email: str, job_title: str, candidates: List[dict]) -> bool:
-    if not settings.GMAIL_USER or not settings.GMAIL_APP_PASSWORD:
+    """
+    Send screening report via Resend API (HTTPS — works on Render free tier).
+    Resend free tier: 3000 emails/month, no credit card needed.
+    """
+    if not settings.RESEND_API_KEY:
         raise ValueError(
-            "GMAIL_USER and GMAIL_APP_PASSWORD must be set in Render environment variables."
+            "RESEND_API_KEY not set. Add it in Render → Environment. "
+            "Get a free key at resend.com."
         )
 
-    msg            = MIMEMultipart("alternative")
-    msg["Subject"] = f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked"
-    msg["From"]    = f"TalentMesh <{settings.GMAIL_USER}>"
-    msg["To"]      = to_email
-
-    plain = f"TalentMesh Screening Report — {job_title}\n\n"
+    html_body  = build_email_html(job_title, candidates)
+    plain_body = f"TalentMesh Screening Report — {job_title}\n\n"
     for c in candidates:
-        plain += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
-    plain += f"\nView full results at: https://talentmesh.nimbus-24.com"
+        plain_body += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
+    plain_body += f"\nView full results at: https://talentmesh.nimbus-24.com"
 
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(build_email_html(job_title, candidates), "html"))
+    payload = {
+        "from":    "TalentMesh <onboarding@resend.dev>",
+        "to":      [to_email],
+        "subject": f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked",
+        "html":    html_body,
+        "text":    plain_body,
+    }
 
-    last_error = None
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type":  "application/json",
+            },
+            json=payload,
+        )
 
-    # Try port 465 SSL first
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
-            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
-            server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
-        print(f"[Email] Sent via port 465 SSL to {to_email}")
-        return True
-    except Exception as e:
-        last_error = e
-        print(f"[Email] Port 465 failed: {type(e).__name__}: {e}")
+    if response.status_code not in (200, 201):
+        error = response.json() if response.content else response.status_code
+        raise Exception(f"Resend API error: {error}")
 
-    # Fallback to port 587 TLS
-    try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
-            server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
-        print(f"[Email] Sent via port 587 TLS to {to_email}")
-        return True
-    except Exception as e:
-        last_error = e
-        print(f"[Email] Port 587 failed: {type(e).__name__}: {e}")
-
-    raise Exception(f"Both SMTP ports failed. Last error: {type(last_error).__name__}: {last_error}")
+    print(f"[Email] Sent via Resend to {to_email} — job: {job_title}")
+    return True
