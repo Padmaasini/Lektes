@@ -1209,23 +1209,27 @@
     animation: fadeUp .35s ease both;
   }
   .candidate-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+  /* Top row: rank circle + name/meta + score ring — all on one line */
   .card-top {
-    display: grid;
-    grid-template-columns: 52px 1fr auto;
-    align-items: center;
-    padding: 18px 20px;
-    gap: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 18px 20px 14px 20px;
+    gap: 14px;
   }
   .c-rank {
-    width: 40px; height: 40px; border-radius: 50%;
+    width: 42px; height: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px; flex-shrink: 0;
+    font-weight: 800; font-size: 15px; flex-shrink: 0; margin-top: 2px;
   }
-  .rank-1 { background: #fff8e0; color: #b07a1a; border: 2px solid #f0c040; }
-  .rank-2 { background: #f0f0f0; color: #777;    border: 2px solid #ccc; }
-  .rank-3 { background: #fff0eb; color: #b35c3a; border: 2px solid #e8a080; }
+  .rank-1     { background: #fff8e0; color: #b07a1a; border: 2px solid #f0c040; }
+  .rank-2     { background: #f0f0f0; color: #777;    border: 2px solid #ccc; }
+  .rank-3     { background: #fff0eb; color: #b35c3a; border: 2px solid #e8a080; }
   .rank-other { background: var(--cream2); color: var(--text-light); border: 2px solid var(--border); }
-  .c-main { padding: 0 16px; }
+
+  /* Middle — name, meta, tags — takes all remaining space */
+  .c-main { flex: 1; min-width: 0; }
   .c-name { font-size: 16px; font-weight: 700; color: var(--text-dark); }
   .c-meta { font-size: 13px; color: var(--text-light); margin-top: 3px; }
   .c-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
@@ -1235,7 +1239,9 @@
     border-radius: 6px; padding: 2px 9px;
     font-size: 11px; font-weight: 600;
   }
-  .c-score-block { text-align: center; min-width: 80px; }
+
+  /* Right — score ring, fixed width, never shrinks */
+  .c-score-block { text-align: center; width: 72px; flex-shrink: 0; }
   .score-ring {
     width: 64px; height: 64px; border-radius: 50%;
     display: flex; flex-direction: column;
@@ -1251,8 +1257,21 @@
   .score-pct { font-size: 10px; opacity: .6; font-weight: 600; }
   .score-label-sm { font-size: 11px; color: var(--text-light); font-weight: 500; margin-top: 5px; }
 
-  /* ── PROFILE VERIFICATION BADGES ── */
-  .c-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 20px 12px 88px; }
+  /* Education strip — full width below card-top */
+  .c-edu-strip {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 8px 20px 10px 76px;
+    font-size: 12px; color: var(--text-mid);
+    border-top: 1px solid var(--border-light);
+  }
+  .edu-item { display: flex; align-items: center; gap: 5px; }
+  .edu-ico  { font-size: 13px; }
+
+  /* Badges row */
+  .c-badges {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px 20px 10px 76px;
+  }
   .badge-platform {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px;
@@ -1264,9 +1283,16 @@
   .badge-verified   .badge-dot { background: #2d7a4f; }
   .badge-unverified .badge-dot { background: #ccc; }
 
-  /* ── PROS / CONS BOXES ── */
-  .c-detail { padding: 0 20px 18px 20px; display: flex; flex-direction: column; gap: 10px; }
-  .pros-box, .cons-box { border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+  /* Pros / Cons — full width below badges */
+  .c-detail {
+    padding: 4px 20px 18px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pros-box, .cons-box {
+    border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.6; width: 100%;
+    box-sizing: border-box;
+  }
   .pros-box { background: #edf7f1; border: 1.5px solid #b8dfc8; color: #1a4a2e; }
   .cons-box { background: #fdf0ee; border: 1.5px solid #f0b8b0; color: #7a1a1a; }
   .detail-label {
@@ -1276,16 +1302,93 @@
   .pros-box .detail-label { color: #2d7a4f; }
   .cons-box .detail-label { color: #c0392b; }
 
-  /* ── EDUCATION STRIP ── */
-  .c-edu-strip {
-    padding: 12px 20px 0 88px;
-    font-size: 12px; color: var(--text-mid);
-    border-top: 1px solid var(--border-light);
-    display: flex; gap: 20px; flex-wrap: wrap;
-  }
-  .edu-item { display: flex; align-items: center; gap: 5px; }
-  .edu-ico { font-size: 13px; }
 
+
+  /* ── TOP 3 COMPARISON ── */
+  .comparison-section {
+    margin-bottom: 28px;
+  }
+  .comparison-heading {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-light);
+    margin-bottom: 14px;
+  }
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .compare-card {
+    background: #fff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+  }
+  .compare-card.rank-1-card { border-color: #f0c040; }
+  .compare-card.rank-2-card { border-color: #ccc; }
+  .compare-card.rank-3-card { border-color: #e8a080; }
+  .compare-header {
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .compare-rank {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; flex-shrink: 0;
+  }
+  .compare-name {
+    font-size: 13px; font-weight: 700; color: var(--text-dark);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0;
+  }
+  .compare-score-pill {
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .compare-score-pill.high { background: var(--emerald-light); color: var(--emerald); }
+  .compare-score-pill.mid  { background: #fff8ed; color: #b07a1a; }
+  .compare-score-pill.low  { background: var(--red-light); color: var(--red); }
+  .compare-body { padding: 12px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .compare-row {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .compare-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-light);
+  }
+  .compare-value { font-size: 12px; color: var(--text-dark); line-height: 1.5; }
+  .compare-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .compare-tag {
+    background: var(--emerald-light); color: var(--forest);
+    border: 1px solid var(--emerald-mid);
+    border-radius: 5px; padding: 1px 7px; font-size: 10px; font-weight: 600;
+  }
+  .compare-pros {
+    background: #edf7f1; border-left: 3px solid #2d7a4f;
+    border-radius: 0 6px 6px 0; padding: 8px 10px;
+    font-size: 11px; color: #1a4a2e; line-height: 1.5;
+  }
+  .compare-cons {
+    background: #fdf0ee; border-left: 3px solid #c0392b;
+    border-radius: 0 6px 6px 0; padding: 8px 10px;
+    font-size: 11px; color: #7a1a1a; line-height: 1.5;
+  }
+  .compare-bar-wrap { margin-top: 2px; }
+  .compare-bar-bg {
+    height: 6px; background: var(--cream2); border-radius: 4px; overflow: hidden;
+  }
+  .compare-bar-fill {
+    height: 100%; border-radius: 4px; transition: width .6s ease;
+  }
+  @media (max-width: 700px) {
+    .comparison-grid { grid-template-columns: 1fr; }
+  }
 
 </style>
 </head>
@@ -1473,7 +1576,7 @@
             <div class="stage-ico">🎯</div>
             <div class="stage-info">
               <div class="stage-title">Matching to Job</div>
-              <div class="stage-desc">Comparing each CV against your job requirements</div>
+              <div class="stage-desc" id="s2desc">Comparing each CV against your job requirements</div>
             </div>
             <span class="stage-badge badge-wait" id="s2b">Waiting</span>
           </div>
@@ -1481,7 +1584,7 @@
             <div class="stage-ico">🔗</div>
             <div class="stage-info">
               <div class="stage-title">Verifying Profiles</div>
-              <div class="stage-desc">Cross-checking LinkedIn and GitHub profiles</div>
+              <div class="stage-desc">Cross-checking LinkedIn, GitHub, Kaggle, StackOverflow</div>
             </div>
             <span class="stage-badge badge-wait" id="s3b">Waiting</span>
           </div>
@@ -1505,8 +1608,18 @@
         <div class="results-heading" id="rTitle">Ranked Candidates</div>
         <div class="results-meta" id="rMeta"></div>
       </div>
-      <button class="btn-email" onclick="emailReport()">📧 Email Report to HR</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-email" onclick="downloadReport()">⬇️ Download PDF</button>
+        <button class="btn-email" onclick="emailReport()">📧 Email Report to HR</button>
+      </div>
     </div>
+    <!-- Top 3 comparison -->
+    <div class="comparison-section" id="comparisonSection" style="display:none;">
+      <div class="comparison-heading">🏆 Top 3 Head-to-Head</div>
+      <div class="comparison-grid" id="comparisonGrid"></div>
+    </div>
+
+    <!-- Full ranked list -->
     <div id="cList"></div>
     <button class="btn-new" onclick="reset()">+ Start a New Screening</button>
   </div>
@@ -1524,7 +1637,7 @@
 
 <script>
 const API = 'https://hrassist-dqb3.onrender.com';
-let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [] };
+let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null };
 
 function scrollToMain() {
   document.getElementById('main').scrollIntoView({ behavior: 'smooth' });
@@ -1804,6 +1917,15 @@ async function pollStatus() {
       const res = await fetch(`${API}/api/v1/screen/status/${S.screenId}`);
       if (!res.ok) return;
       const data = await res.json();
+
+      // Show live candidate count during scoring stage
+      if (data.scored_count !== undefined && data.total_count !== undefined) {
+        const desc = document.getElementById('s2desc');
+        if (desc && data.scored_count > 0) {
+          desc.textContent = `Scored ${data.scored_count} of ${data.total_count} candidates…`;
+        }
+      }
+
       if (data.status === 'completed') {
         clearInterval(iv);
         setProgress(100, 'Complete!');
@@ -1825,9 +1947,107 @@ async function loadResults() {
     const res = await fetch(`${API}/api/v1/reports/${S.jobId}`);
     if (!res.ok) throw new Error();
     const data = await res.json();
+    S.reportData = data;   // store for PDF download
     renderResults(data);
     goTo(4);
   } catch(e) { toast('Could not load results', 'error'); }
+}
+
+// ── TOP 3 COMPARISON ──
+function renderComparison(cands) {
+  const top3 = cands.slice(0, 3);
+  if (top3.length < 2) {
+    document.getElementById('comparisonSection').style.display = 'none';
+    return;
+  }
+
+  const rankMeta = [
+    { cls: 'rank-1', cardCls: 'rank-1-card', bg: '#fff8e0', color: '#b07a1a', border: '#f0c040' },
+    { cls: 'rank-2', cardCls: 'rank-2-card', bg: '#f0f0f0', color: '#777',    border: '#ccc' },
+    { cls: 'rank-3', cardCls: 'rank-3-card', bg: '#fff0eb', color: '#b35c3a', border: '#e8a080' },
+  ];
+
+  const maxScore = Math.max(...top3.map(c => c.match_score || 0)) || 100;
+
+  document.getElementById('comparisonGrid').innerHTML = top3.map((c, i) => {
+    const meta    = rankMeta[i];
+    const score   = c.match_score || 0;
+    const pillCls = score >= 70 ? 'high' : score >= 45 ? 'mid' : 'low';
+    const barColor = score >= 70 ? '#2d7a4f' : score >= 45 ? '#d97706' : '#c0392b';
+    const barPct  = Math.round((score / maxScore) * 100);
+
+    // Skills — up to 5
+    const skills = (c.skills || '').split(',').slice(0, 5).filter(Boolean)
+      .map(s => `<span class="compare-tag">${s.trim()}</span>`).join('');
+
+    // Pros — first sentence of justification
+    const justFull = c.justification || '';
+    const verIdx   = justFull.indexOf(' Verified profiles:');
+    const prosText = (verIdx > -1 ? justFull.substring(0, verIdx) : justFull).trim();
+    const firstPro = prosText.split('.')[0].trim();
+
+    // Cons — first sentence of red flags
+    const firstCon = (c.red_flags || '').split('.')[0].trim();
+
+    return `
+      <div class="compare-card ${meta.cardCls}">
+        <div class="compare-header">
+          <div class="compare-rank" style="background:${meta.bg};color:${meta.color};border:2px solid ${meta.border};">${i + 1}</div>
+          <div class="compare-name">${c.name || c.full_name || 'Unknown'}</div>
+          <div class="compare-score-pill ${pillCls}">${score}%</div>
+        </div>
+        <div class="compare-body">
+
+          <!-- Score bar -->
+          <div class="compare-row">
+            <div class="compare-label">Match Score</div>
+            <div class="compare-bar-wrap">
+              <div class="compare-bar-bg">
+                <div class="compare-bar-fill" style="width:${barPct}%;background:${barColor};"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Experience -->
+          ${c.experience_years ? `
+          <div class="compare-row">
+            <div class="compare-label">Experience</div>
+            <div class="compare-value">💼 ${c.experience_years} years</div>
+          </div>` : ''}
+
+          <!-- Education -->
+          ${c.education ? `
+          <div class="compare-row">
+            <div class="compare-label">Education</div>
+            <div class="compare-value">🎓 ${c.education}</div>
+          </div>` : ''}
+
+          <!-- Skills -->
+          ${skills ? `
+          <div class="compare-row">
+            <div class="compare-label">Key Skills</div>
+            <div class="compare-tags">${skills}</div>
+          </div>` : ''}
+
+          <!-- Strength -->
+          ${firstPro ? `
+          <div class="compare-row">
+            <div class="compare-label">✅ Strength</div>
+            <div class="compare-pros">${firstPro}.</div>
+          </div>` : ''}
+
+          <!-- Concern -->
+          ${firstCon ? `
+          <div class="compare-row">
+            <div class="compare-label">⚠️ Concern</div>
+            <div class="compare-cons">${firstCon}.</div>
+          </div>` : ''}
+
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('comparisonSection').style.display = 'block';
 }
 
 function renderResults(report) {
@@ -1842,6 +2062,7 @@ function renderResults(report) {
     return;
   }
 
+  renderComparison(cands);
   document.getElementById('cList').innerHTML = cands.map((c, i) => {
     const rank  = c.rank || (i + 1);
     const rankClass = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
@@ -1929,14 +2150,99 @@ function renderResults(report) {
 }
 
 async function emailReport() {
-  const btn = document.querySelector('.btn-email');
+  const btns = document.querySelectorAll('.btn-email');
+  const btn  = btns[btns.length - 1]; // last = email button
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
     const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, { method:'POST' });
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
     toast('Report emailed to HR! 📧', 'success');
-  } catch(e) { toast('Email failed — check Gmail config on Render', 'error'); }
-  finally { btn.disabled = false; btn.textContent = '📧 Email Report to HR'; }
+  } catch(e) {
+    toast(`Email failed: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '📧 Email Report to HR';
+  }
+}
+
+// ── DOWNLOAD PDF REPORT ──
+function downloadReport() {
+  if (!S.reportData) { toast('No report data to download', 'error'); return; }
+  const report   = S.reportData;
+  const cands    = report.top_candidates || [];
+  const jobTitle = report.job_title || 'Screening Report';
+  const now      = new Date().toLocaleDateString('en-GB');
+
+  let rows = cands.map(c => {
+    const score = c.match_score || 0;
+    const color = score >= 70 ? '#2d7a4f' : score >= 45 ? '#d97706' : '#c0392b';
+    return `
+      <tr style="border-bottom:1px solid #ede8de;page-break-inside:avoid;">
+        <td style="padding:14px 10px;font-weight:700;font-size:16px;color:#1a2e1a;text-align:center;width:36px;">#${c.rank||'—'}</td>
+        <td style="padding:14px 10px;">
+          <div style="font-weight:700;font-size:14px;color:#1c2b1c;">${c.name||c.full_name||'Unknown'}</div>
+          <div style="font-size:12px;color:#8aaa95;margin-top:2px;">${c.email||'—'}${c.experience_years ? ' · ' + c.experience_years + ' yrs' : ''}</div>
+          ${c.education ? `<div style="font-size:12px;color:#4a6355;margin-top:2px;">🎓 ${c.education}</div>` : ''}
+          <div style="margin-top:8px;padding:8px 10px;background:#edf7f1;border-left:3px solid #2d7a4f;border-radius:4px;font-size:12px;color:#1a4a2e;line-height:1.5;">${c.justification||''}</div>
+          ${c.red_flags ? `<div style="margin-top:6px;padding:8px 10px;background:#fdf0ee;border-left:3px solid #c0392b;border-radius:4px;font-size:12px;color:#7a1a1a;">⚠️ ${c.red_flags}</div>` : ''}
+        </td>
+        <td style="padding:14px 10px;text-align:center;width:70px;">
+          <div style="font-size:26px;font-weight:800;color:${color};">${score}%</div>
+          <div style="font-size:10px;color:${color};font-weight:600;">${score>=70?'Strong':score>=45?'Partial':'Weak'}</div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>TalentMesh — ${jobTitle}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #faf7f2; }
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none; }
+    }
+  </style>
+  </head><body>
+  <div style="max-width:760px;margin:0 auto;padding:32px 24px;">
+    <div style="background:#1a2e1a;padding:28px 32px;border-radius:12px;margin-bottom:24px;">
+      <div style="font-size:22px;font-weight:700;color:#fff;">🌿 TalentMesh</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">AI Recruitment Screening Report · ${now}</div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#8aaa95;letter-spacing:0.1em;">Role</div>
+      <div style="font-size:24px;font-weight:700;color:#1c2b1c;margin-top:4px;">${jobTitle}</div>
+      <div style="font-size:13px;color:#8aaa95;margin-top:4px;">${cands.length} candidates screened and ranked</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <thead>
+        <tr style="background:#f3ede3;">
+          <th style="padding:12px 10px;font-size:11px;color:#8aaa95;text-transform:uppercase;">#</th>
+          <th style="padding:12px 10px;font-size:11px;color:#8aaa95;text-transform:uppercase;text-align:left;">Candidate</th>
+          <th style="padding:12px 10px;font-size:11px;color:#8aaa95;text-transform:uppercase;">Score</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:24px;text-align:center;font-size:12px;color:#8aaa95;">
+      Generated by TalentMesh · talentmesh.nimbus-24.com
+    </div>
+    <div class="no-print" style="margin-top:24px;text-align:center;">
+      <button onclick="window.print()" style="padding:12px 32px;background:#1a2e1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🖨 Print / Save as PDF</button>
+    </div>
+  </div>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (win) {
+    win.onload = () => {
+      setTimeout(() => win.print(), 500);
+    };
+  }
+  URL.revokeObjectURL(url);
 }
 
 function reset() {

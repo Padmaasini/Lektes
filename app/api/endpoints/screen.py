@@ -62,12 +62,21 @@ async def get_screening_status(screening_id: str, db: Session = Depends(get_db))
     if not screening:
         raise HTTPException(status_code=404, detail="Screening not found")
 
+    # Count how many candidates have been scored so far (live progress)
+    total_count  = db.query(Candidate).filter(Candidate.job_id == screening.job_id).count()
+    scored_count = db.query(Candidate).filter(
+        Candidate.job_id == screening.job_id,
+        Candidate.match_score.isnot(None)
+    ).count()
+
     response = {
         "screening_id": screening.id,
-        "job_id": screening.job_id,
-        "status": screening.status,
+        "job_id":       screening.job_id,
+        "status":       screening.status,
         "report_ready": screening.status == "completed",
-        "created_at": screening.created_at.isoformat(),
+        "scored_count": scored_count,
+        "total_count":  total_count,
+        "created_at":   screening.created_at.isoformat(),
     }
 
     if screening.completed_at:

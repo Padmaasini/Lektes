@@ -95,12 +95,24 @@ async def send_report_email(to_email: str, job_title: str, candidates: List[dict
         plain_body += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
     plain_body += f"\nView full results at: https://talentmesh.nimbus-24.com"
 
+    # Build PDF-like HTML attachment as base64
+    import base64
+    attachment_html = html_body.encode("utf-8")
+    attachment_b64  = base64.b64encode(attachment_html).decode("utf-8")
+
     payload = {
         "from":    "TalentMesh <onboarding@resend.dev>",
         "to":      [to_email],
         "subject": f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked",
         "html":    html_body,
         "text":    plain_body,
+        "attachments": [
+            {
+                "filename":    f"TalentMesh_{job_title.replace(' ', '_')}_Report.html",
+                "content":     attachment_b64,
+                "content_type": "text/html",
+            }
+        ]
     }
 
     async with httpx.AsyncClient(timeout=15.0) as client:
