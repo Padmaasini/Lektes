@@ -1125,13 +1125,18 @@
 
   /* Education strip */
   .c-edu-strip {
-    display: flex; gap: 20px; flex-wrap: wrap;
+    display: flex; gap: 16px; flex-wrap: wrap;
     padding: 8px 20px 10px 20px;
     font-size: 12px; color: var(--text-mid);
     border-top: 1px solid var(--border-light);
+    align-items: center;
   }
-  .edu-item { display: flex; align-items: center; gap: 5px; }
-  .edu-ico  { font-size: 13px; }
+  .edu-item {
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 320px;
+  }
+  .edu-ico  { font-size: 13px; flex-shrink: 0; }
 
   /* Badges */
   .c-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 20px 10px 20px; }
@@ -1958,10 +1963,28 @@ function renderResults(report) {
       badge('StackOverflow', c.stackoverflow_url,  'stackoverflow', ''),
     ].filter(Boolean).join('');
 
-    // Education / experience info strip
+    // Education — highest degree only
+    function highestDegree(edu) {
+      if (!edu) return '';
+      const e = edu.toLowerCase();
+      if (e.includes('phd') || e.includes('ph.d') || e.includes('doctor')) {
+        const p = edu.split(',').find(x => /phd|ph\.d|doctor/i.test(x));
+        return p ? p.trim() : edu.split(',')[0].trim();
+      }
+      if (e.includes('master') || e.includes('msc') || e.includes('mba') || e.includes('m.tech') || e.includes('mtech')) {
+        const p = edu.split(',').find(x => /master|msc|mba|m\.tech|mtech/i.test(x));
+        return p ? p.trim() : edu.split('Bachelor')[0].split('B.Tech')[0].trim().replace(/,$/,'');
+      }
+      if (e.includes('bachelor') || e.includes('b.tech') || e.includes('btech') || e.includes('bsc')) {
+        const p = edu.split(',').find(x => /bachelor|b\.tech|btech|bsc/i.test(x));
+        return p ? p.trim() : edu.split(',')[0].trim();
+      }
+      return edu.split(',')[0].trim();
+    }
+    const topDegree = highestDegree(c.education);
     const eduStrip = [
-      c.education       ? `<span class="edu-item"><span class="edu-ico">🎓</span>${c.education}</span>` : '',
-      c.experience_years? `<span class="edu-item"><span class="edu-ico">💼</span>${c.experience_years} yrs experience</span>` : '',
+      topDegree          ? `<span class="edu-item"><span class="edu-ico">🎓</span>${topDegree}</span>` : '',
+      c.experience_years ? `<span class="edu-item"><span class="edu-ico">💼</span>${c.experience_years} yrs</span>` : '',
     ].filter(Boolean).join('');
 
     return `

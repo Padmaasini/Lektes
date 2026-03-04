@@ -13,3 +13,4 @@ langgraph
 httpx
 python-dotenv
 pydantic[email]
+reportlab
