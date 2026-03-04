@@ -98,8 +98,30 @@ async def send_report_email(to_email: str, job_title: str, candidates: List[dict
     msg.attach(MIMEText(plain, "plain"))
     msg.attach(MIMEText(build_email_html(job_title, candidates), "html"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
-        server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
+    last_error = None
 
-    return True
+    # Try port 465 SSL first
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
+            server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
+        print(f"[Email] Sent via port 465 SSL to {to_email}")
+        return True
+    except Exception as e:
+        last_error = e
+        print(f"[Email] Port 465 failed: {type(e).__name__}: {e}")
+
+    # Fallback to port 587 TLS
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(settings.GMAIL_USER, settings.GMAIL_APP_PASSWORD)
+            server.sendmail(settings.GMAIL_USER, to_email, msg.as_string())
+        print(f"[Email] Sent via port 587 TLS to {to_email}")
+        return True
+    except Exception as e:
+        last_error = e
+        print(f"[Email] Port 587 failed: {type(e).__name__}: {e}")
+
+    raise Exception(f"Both SMTP ports failed. Last error: {type(last_error).__name__}: {last_error}")
