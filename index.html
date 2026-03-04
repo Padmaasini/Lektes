@@ -802,141 +802,7 @@
   }
 
   /* ── CANDIDATE CARDS ── */
-  .candidate-card {
-    background: #fff;
-    border: 1.5px solid var(--border-light);
-    border-radius: 12px;
-    padding: 22px 24px;
-    margin-bottom: 12px;
-    display: grid;
-    grid-template-columns: 52px 1fr 80px;
-    gap: 18px;
-    align-items: start;
-    transition: box-shadow 0.2s, border-color 0.2s;
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .candidate-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--emerald-mid);
-  }
-
-  .candidate-card:nth-child(1) { animation-delay: 0.05s; }
-  .candidate-card:nth-child(2) { animation-delay: 0.1s; }
-  .candidate-card:nth-child(3) { animation-delay: 0.15s; }
-  .candidate-card:nth-child(4) { animation-delay: 0.2s; }
-  .candidate-card:nth-child(5) { animation-delay: 0.25s; }
-
-  .c-rank {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-head);
-    font-weight: 700;
-    font-size: 20px;
-  }
-
-  .rank-1 { background: #fef9e7; border: 1.5px solid #f9d423; color: #b7860b; }
-  .rank-2 { background: #f4f5f7; border: 1.5px solid #d0d3da; color: #6b7280; }
-  .rank-3 { background: #fdf3e8; border: 1.5px solid #e8b87d; color: #9a5e1a; }
-  .rank-other { background: var(--cream2); border: 1.5px solid var(--border); color: var(--text-light); }
-
-  .c-name {
-    font-family: var(--font-head);
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--text-dark);
-    margin-bottom: 3px;
-  }
-
-  .c-meta { font-size: 13px; color: var(--text-light); margin-bottom: 10px; }
-
-  .c-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-
-  .c-tag {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 5px;
-    background: var(--emerald-light);
-    border: 1px solid var(--emerald-mid);
-    color: var(--forest);
-  }
-
-  .c-tag.plain {
-    background: var(--cream2);
-    border-color: var(--border);
-    color: var(--text-mid);
-  }
-
-  .c-justification {
-    font-size: 13px;
-    color: var(--text-mid);
-    line-height: 1.65;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-light);
-  }
-
-  .c-redflag {
-    font-size: 12px;
-    color: var(--red);
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .c-profiles { display: flex; gap: 6px; margin-top: 8px; }
-
-  .c-profile-link {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-mid);
-    text-decoration: none;
-    padding: 3px 9px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    transition: all 0.2s;
-    background: var(--cream);
-  }
-
-  .c-profile-link:hover { border-color: var(--emerald); color: var(--emerald); background: var(--emerald-light); }
-
-  /* ── SCORE ── */
-  .c-score { text-align: center; }
-
-  .score-ring {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 6px;
-  }
-
-  .score-ring.high { background: var(--emerald-light); border: 2.5px solid var(--emerald-bright); }
-  .score-ring.mid { background: #fff8ed; border: 2.5px solid var(--sand); }
-  .score-ring.low { background: var(--red-light); border: 2.5px solid #e07070; }
-
-  .score-num {
-    font-family: var(--font-head);
-    font-weight: 700;
-    font-size: 20px;
-    line-height: 1;
-  }
-
-  .score-ring.high .score-num { color: var(--emerald); }
-  .score-ring.mid .score-num { color: #b07a1a; }
-  .score-ring.low .score-num { color: var(--red); }
-
-  .score-pct { font-size: 10px; opacity: 0.6; font-weight: 600; }
-  .score-label { font-size: 11px; color: var(--text-light); font-weight: 500; }
+  /* old card styles removed — see card v2 below */
 
   /* ── ERROR & TOAST ── */
   .err-msg {
@@ -1016,8 +882,7 @@
     main { padding: 40px 16px 80px; }
     .card { padding: 24px 20px; }
     .form-row { grid-template-columns: 1fr; }
-    .candidate-card { grid-template-columns: 44px 1fr; }
-    .c-score { display: none; }
+
     .results-top { flex-direction: column; }
     footer { padding: 24px 20px; }
   }
@@ -1197,39 +1062,42 @@
 
 
 
-  /* ── CANDIDATE CARD v2 ── */
+  /* ── CANDIDATE CARD ── */
   .candidate-card {
     background: #fff;
     border: 1.5px solid var(--border-light);
     border-radius: 16px;
     margin-bottom: 14px;
-    overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: box-shadow .2s, transform .15s;
     animation: fadeUp .35s ease both;
   }
-  .candidate-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .candidate-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
-  /* Top row: rank circle + name/meta + score ring — all on one line */
+  /* Header row — rank | name+tags | score */
   .card-top {
+    display: table;
+    width: 100%;
+    padding: 18px 20px 14px 20px;
+    box-sizing: border-box;
+  }
+  .card-top-inner {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    padding: 18px 20px 14px 20px;
     gap: 14px;
+    width: 100%;
   }
   .c-rank {
-    width: 42px; height: 42px; border-radius: 50%;
+    width: 42px; height: 42px; min-width: 42px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 15px; flex-shrink: 0; margin-top: 2px;
+    font-weight: 800; font-size: 15px;
   }
   .rank-1     { background: #fff8e0; color: #b07a1a; border: 2px solid #f0c040; }
   .rank-2     { background: #f0f0f0; color: #777;    border: 2px solid #ccc; }
   .rank-3     { background: #fff0eb; color: #b35c3a; border: 2px solid #e8a080; }
   .rank-other { background: var(--cream2); color: var(--text-light); border: 2px solid var(--border); }
-
-  /* Middle — name, meta, tags — takes all remaining space */
-  .c-main { flex: 1; min-width: 0; }
+  .c-main { flex: 1; min-width: 0; overflow: hidden; }
   .c-name { font-size: 16px; font-weight: 700; color: var(--text-dark); }
   .c-meta { font-size: 13px; color: var(--text-light); margin-top: 3px; }
   .c-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
@@ -1239,9 +1107,7 @@
     border-radius: 6px; padding: 2px 9px;
     font-size: 11px; font-weight: 600;
   }
-
-  /* Right — score ring, fixed width, never shrinks */
-  .c-score-block { text-align: center; width: 72px; flex-shrink: 0; }
+  .c-score-block { min-width: 72px; width: 72px; text-align: center; flex-shrink: 0; }
   .score-ring {
     width: 64px; height: 64px; border-radius: 50%;
     display: flex; flex-direction: column;
@@ -1257,25 +1123,21 @@
   .score-pct { font-size: 10px; opacity: .6; font-weight: 600; }
   .score-label-sm { font-size: 11px; color: var(--text-light); font-weight: 500; margin-top: 5px; }
 
-  /* Education strip — full width below card-top */
+  /* Education strip */
   .c-edu-strip {
     display: flex; gap: 20px; flex-wrap: wrap;
-    padding: 8px 20px 10px 76px;
+    padding: 8px 20px 10px 20px;
     font-size: 12px; color: var(--text-mid);
     border-top: 1px solid var(--border-light);
   }
   .edu-item { display: flex; align-items: center; gap: 5px; }
   .edu-ico  { font-size: 13px; }
 
-  /* Badges row */
-  .c-badges {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    padding: 8px 20px 10px 76px;
-  }
+  /* Badges */
+  .c-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 20px 10px 20px; }
   .badge-platform {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
   }
   .badge-verified   { background: #e8f5ee; color: #2d7a4f; border: 1px solid #b8dfc8; }
   .badge-unverified { background: #f5f5f5; color: #aaa;    border: 1px solid #e0e0e0; }
@@ -1283,15 +1145,11 @@
   .badge-verified   .badge-dot { background: #2d7a4f; }
   .badge-unverified .badge-dot { background: #ccc; }
 
-  /* Pros / Cons — full width below badges */
-  .c-detail {
-    padding: 4px 20px 18px 20px;
-    display: flex; flex-direction: column; gap: 10px;
-  }
+  /* Pros / Cons */
+  .c-detail { padding: 4px 20px 18px 20px; display: flex; flex-direction: column; gap: 10px; }
   .pros-box, .cons-box {
     border-radius: 10px; padding: 12px 14px;
-    font-size: 13px; line-height: 1.6; width: 100%;
-    box-sizing: border-box;
+    font-size: 13px; line-height: 1.6;
   }
   .pros-box { background: #edf7f1; border: 1.5px solid #b8dfc8; color: #1a4a2e; }
   .cons-box { background: #fdf0ee; border: 1.5px solid #f0b8b0; color: #7a1a1a; }
@@ -2109,41 +1967,40 @@ function renderResults(report) {
     return `
       <div class="candidate-card">
 
-        <!-- Top row: rank + name + score -->
         <div class="card-top">
-          <div class="c-rank ${rankClass}">${rank}</div>
-          <div class="c-main">
-            <div class="c-name">${c.name || c.full_name || 'Unknown'}</div>
-            <div class="c-meta">${c.email||'—'}</div>
-            ${skills ? `<div class="c-tags" style="margin-top:8px;">${skills}</div>` : ''}
-          </div>
-          <div class="c-score-block">
-            <div class="score-ring ${ringClass}">
-              <div class="score-num">${score}</div>
-              <div class="score-pct">%</div>
+          <div class="card-top-inner">
+            <div class="c-rank ${rankClass}">${rank}</div>
+            <div class="c-main">
+              <div class="c-name">${c.name || c.full_name || 'Unknown'}</div>
+              <div class="c-meta">${c.email||'—'}</div>
+              ${skills ? `<div class="c-tags">${skills}</div>` : ''}
             </div>
-            <div class="score-label-sm">${scoreLabel}</div>
+            <div class="c-score-block">
+              <div class="score-ring ${ringClass}">
+                <div class="score-num">${score}</div>
+                <div class="score-pct">%</div>
+              </div>
+              <div class="score-label-sm">${scoreLabel}</div>
+            </div>
           </div>
         </div>
 
         ${eduStrip ? `<div class="c-edu-strip">${eduStrip}</div>` : ''}
+        ${badges   ? `<div class="c-badges">${badges}</div>`       : ''}
 
-        ${badges ? `<div class="c-badges" style="margin-top:10px;">${badges}</div>` : ''}
-
-        <!-- Pros / Cons detail section -->
-        <div class="c-detail" style="margin-top:${(eduStrip||badges)?'10px':'0'}">
+        ${(prosText || consText) ? `
+        <div class="c-detail">
           ${prosText ? `
           <div class="pros-box">
             <span class="detail-label">✅ Strengths</span>
-            ${prosText}
-            ${verText ? `<div style="margin-top:6px;font-size:12px;opacity:0.8;">${verText}</div>` : ''}
+            ${prosText}${verText ? `<div style="margin-top:6px;font-size:12px;opacity:0.8;">${verText}</div>` : ''}
           </div>` : ''}
           ${consText ? `
           <div class="cons-box">
             <span class="detail-label">⚠️ Concerns</span>
             ${consText}
           </div>` : ''}
-        </div>
+        </div>` : ''}
 
       </div>`;
   }).join('');
