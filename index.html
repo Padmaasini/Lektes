@@ -1349,12 +1349,319 @@
   }
   .dark-icon { font-size: 14px; line-height: 1; }
 
+
+  /* ══════════════════════════════════════
+     LANDING PAGE — shown before Try for Free
+  ══════════════════════════════════════ */
+  #landingView  { display: block; }
+  #appView      { display: none;  }
+
+  .landing-features {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+  .landing-features h2 {
+    font-family: var(--font-head);
+    font-size: clamp(26px, 4vw, 38px);
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .landing-features .section-sub {
+    text-align: center;
+    color: var(--text-mid);
+    font-size: 15px;
+    margin-bottom: 48px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 700px) { .features-grid { grid-template-columns: 1fr; } }
+
+  .feature-card {
+    background: #fff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s, transform .15s;
+  }
+  .feature-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  html.dark .feature-card { background: #1a2a1a; }
+
+  .feature-ico {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--emerald-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  html.dark .feature-ico { background: var(--emerald-light); }
+
+  .feature-card h3 {
+    font-family: var(--font-head);
+    font-size: 17px; font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+  }
+  .feature-card p {
+    font-size: 13px; color: var(--text-mid); line-height: 1.65;
+  }
+
+  .how-it-works {
+    background: var(--cream2);
+    padding: 64px 24px;
+  }
+  html.dark .how-it-works { background: var(--cream2); }
+
+  .how-inner {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .how-it-works h2 {
+    font-family: var(--font-head);
+    font-size: clamp(24px, 3.5vw, 34px);
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 48px;
+    letter-spacing: -0.5px;
+  }
+  .how-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    position: relative;
+  }
+  @media (max-width: 700px) { .how-steps { grid-template-columns: 1fr 1fr; } }
+
+  .how-step {
+    text-align: center;
+    padding: 24px 16px;
+  }
+  .how-num {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--emerald);
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .how-step h4 {
+    font-family: var(--font-head);
+    font-size: 15px; font-weight: 700;
+    color: var(--text-dark); margin-bottom: 6px;
+  }
+  .how-step p { font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+
+  .landing-cta {
+    text-align: center;
+    padding: 72px 24px;
+    background: var(--cream);
+  }
+  .landing-cta h2 {
+    font-family: var(--font-head);
+    font-size: clamp(26px, 4vw, 40px);
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+  .landing-cta p {
+    font-size: 15px; color: var(--text-mid);
+    max-width: 520px; margin: 0 auto 32px; line-height: 1.7;
+  }
+  .btn-cta-large {
+    display: inline-block;
+    background: var(--emerald);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 16px; font-weight: 600;
+    padding: 14px 36px;
+    border-radius: 50px;
+    border: none; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(45,122,79,0.35);
+    transition: background .2s, transform .15s, box-shadow .2s;
+    text-decoration: none;
+  }
+  .btn-cta-large:hover {
+    background: var(--emerald-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(56,161,105,0.4);
+  }
+  .cta-note {
+    display: block;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  /* App view — the screening flow */
+  #appView {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .app-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-mid);
+    cursor: pointer;
+    margin-bottom: 24px;
+    border: none;
+    background: none;
+    font-family: var(--font-body);
+    padding: 0;
+    transition: color .2s;
+  }
+  .app-back:hover { color: var(--emerald); }
+
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .compare-table th {
+    padding: 14px 18px;
+    text-align: left;
+    font-family: var(--font-head);
+    font-size: 14px;
+  }
+  .compare-table th:first-child { background: var(--cream3); color: var(--text-mid); }
+  .compare-table th.col-tm    { background: var(--emerald); color: #fff; }
+  .compare-table th.col-sk    { background: #3a4a5a; color: #fff; }
+  .compare-table td {
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+    line-height: 1.5;
+    color: var(--text-dark);
+  }
+  .compare-table td:first-child { font-weight: 600; color: var(--text-mid); background: var(--cream); }
+  .compare-table td.col-tm    { background: var(--emerald-light); color: var(--forest); }
+  .compare-table td.col-sk    { background: #f4f6f8; color: #3a4a5a; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  html.dark .compare-table td:first-child { background: #1a2a1a; }
+  html.dark .compare-table td.col-tm      { background: #162a1e; }
+  html.dark .compare-table td.col-sk      { background: #1e2530; color: #9ab0c8; }
+  html.dark .compare-table th:first-child { background: #243024; }
+
+  /* ── DIFF CARDS ── */
+  .diff-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 28px;
+  }
+  @media (max-width: 600px) { .diff-cards { grid-template-columns: 1fr; } }
+
+  .diff-card {
+    border-radius: 14px;
+    padding: 22px 22px;
+    font-size: 13.5px;
+    line-height: 1.8;
+  }
+  .diff-card ul { list-style: none; padding: 0; }
+  .diff-card ul li { margin-bottom: 4px; }
+  .diff-label {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .diff-us   { background: var(--emerald-light); border: 1.5px solid var(--emerald-mid); }
+  .diff-us .diff-label { color: var(--forest); }
+  .diff-them { background: #f0f4f8; border: 1.5px solid #d0d8e4; }
+  .diff-them .diff-label { color: #3a4a5a; }
+  html.dark .diff-us   { background: #162a1e; border-color: var(--emerald-mid); }
+  html.dark .diff-them { background: #1e2530; border-color: #2a3a4a; color: #9ab0c8; }
+  html.dark .diff-them .diff-label { color: #7090b0; }
+
+  /* ── INTEGRATION FLOW ── */
+  .integration-flow {
+    margin-top: 36px;
+    background: var(--cream2);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+  }
+  html.dark .integration-flow { background: #1a2a1a; border-color: var(--border); }
+  .iflow-label {
+    font-family: var(--font-head);
+    font-size: 14px; font-weight: 700;
+    color: var(--text-mid);
+    margin-bottom: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .iflow-steps {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .iflow-step {
+    background: #fff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-dark);
+    box-shadow: var(--shadow-sm);
+    flex: 1;
+    min-width: 140px;
+  }
+  html.dark .iflow-step { background: #243024; border-color: var(--border); }
+  .iflow-ico { font-size: 18px; flex-shrink: 0; }
+  .iflow-arrow {
+    color: var(--emerald);
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ── APP VIEW BACK BUTTON ── */
+  #appView { display: none; }
+  .app-header {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .app-back-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-mid);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all .2s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .app-back-btn:hover { border-color: var(--emerald); color: var(--emerald); }
+
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="logo" onclick="reset(); goTo(0);" style="cursor:pointer;" title="Return to home">
+  <div class="logo" onclick="goToLanding()" style="cursor:pointer;" title="Return to home">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" width="220" height="40" style="display:block;">
       <!-- Leaf diamond — Option C -->
       <g transform="translate(20,20)">
@@ -1392,18 +1699,19 @@
       <span class="dark-icon" id="darkIcon">🌙</span>
       <span id="darkLabel">Dark</span>
     </button>
-    <button class="btn-try-free" onclick="reset(); goTo(1);">Try for Free</button>
+    <button class="btn-try-free" onclick="launchApp()">Try for Free</button>
   </div>
 </nav>
 
+<div id="landingView">
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-tag">Powered by Groq AI</div>
     <h1>Find the <em>right person</em><br>for every role.</h1>
-    <p class="hero-sub">Screening CVs made easy, with just a swish and a flick .</p>
+    <p class="hero-sub">Upload CVs, paste a job description, and get a ranked shortlist in minutes — no setup, no sales call.</p>
     <div class="hero-buttons">
-      <a href="#main" class="btn-hero" onclick="scrollToMain()">Start Screening →</a>
-      </div>
+      <button class="btn-hero" onclick="launchApp()">Try for Free →</button>
+    </div>
   </div>
 </section>
 
@@ -1414,6 +1722,201 @@
   <div class="stat"><div class="stat-num">Free</div><div class="stat-label">To get started</div></div>
 </div>
 
+<!-- ── FEATURES SECTION ────────────────────────────── -->
+<section class="landing-features">
+  <h2>Everything you need to hire better, faster</h2>
+  <p class="section-sub">No enterprise contract. No setup fee. Just upload CVs and get results.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-ico">🤖</div>
+      <h3>AI-Powered Scoring</h3>
+      <p>Every candidate gets a match score out of 100, with clear reasons — strengths, gaps, and transferable skills explained in plain English.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">🔗</div>
+      <h3>Profile Verification</h3>
+      <p>Automatically cross-checks LinkedIn, GitHub, Kaggle and StackOverflow profiles to validate the skills candidates claim on their CVs.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">📄</div>
+      <h3>Smart CV Parsing</h3>
+      <p>Three-tier extraction handles any CV format — clean PDFs, image-based Canva resumes, and scanned documents all parsed accurately.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">⚡</div>
+      <h3>Instant Job Extraction</h3>
+      <p>Paste any job posting from LinkedIn, your company portal, or any job board. TalentMesh extracts requirements automatically in seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">📊</div>
+      <h3>Ranked Shortlist</h3>
+      <p>Candidates are ranked with a head-to-head top-3 comparison. Gold, silver, bronze — know who to interview first, not who to read first.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">📧</div>
+      <h3>PDF Report by Email</h3>
+      <p>A branded PDF report lands in your HR inbox the moment screening finishes — ready to share with hiring managers, no extra steps.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ────────────────────────────────── -->
+<section class="how-it-works">
+  <div class="how-inner">
+    <h2>How it works</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <h4>Add Job Details</h4>
+        <p>Paste a job ad or fill in the role manually. TalentMesh extracts all requirements with AI.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <h4>Upload CVs</h4>
+        <p>Drop up to 20 CVs at once — PDFs, Word docs, even Canva-designed resumes.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <h4>AI Screening</h4>
+        <p>Each CV is parsed, scored against the role, and cross-verified across professional profiles.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">4</div>
+        <h4>Get Results</h4>
+        <p>Ranked shortlist ready in minutes. Download a PDF report or send it straight to HR.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── VS SKIMA COMPARISON ─────────────────────────── -->
+<section class="landing-features" id="compareSection" style="background:var(--cream2);">
+  <h2>TalentMesh vs Skima AI</h2>
+  <p class="section-sub">Both tools use AI for recruitment screening — here is what sets TalentMesh apart</p>
+
+  <div style="overflow-x:auto; margin-top:8px;">
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th class="col-tm">✦ TalentMesh</th>
+        <th class="col-sk">Skima AI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Primary focus</td><td class="col-tm">CV screening &amp; ranking for any hiring manager</td><td class="col-sk">End-to-end platform for professional recruiters</td></tr>
+      <tr><td>Setup time</td><td class="col-tm">⚡ Under 2 minutes — paste a job, upload CVs</td><td class="col-sk">Onboarding, training, ATS integration required</td></tr>
+      <tr><td>Pricing</td><td class="col-tm">Free to start, low-cost SaaS planned</td><td class="col-sk">Paid plans — users report it feels expensive initially</td></tr>
+      <tr><td>CV parsing</td><td class="col-tm">3-tier: PyMuPDF → pdfplumber → Groq Vision OCR</td><td class="col-sk">200+ data points, 99%+ accuracy, OCR supported</td></tr>
+      <tr><td>Match scoring</td><td class="col-tm">Score out of 100 with transferable skills equivalency</td><td class="col-sk">AI match score with explainable evidence report</td></tr>
+      <tr><td>Profile verification</td><td class="col-tm">✅ LinkedIn, GitHub, Kaggle, StackOverflow</td><td class="col-sk">Skill evidence detection in CV text only</td></tr>
+      <tr><td>Job input</td><td class="col-tm">✅ Paste any job ad — AI extracts everything</td><td class="col-sk">AI job description generator</td></tr>
+      <tr><td>Candidate outreach</td><td class="col-tm">Not included (screening focus)</td><td class="col-sk">✅ Automated email / SMS / LinkedIn campaigns</td></tr>
+      <tr><td>ATS integration</td><td class="col-tm">API-first — webhooks &amp; REST (planned)</td><td class="col-sk">✅ 130+ ATS, CRM, HRIS integrations</td></tr>
+      <tr><td>Target user</td><td class="col-tm">Any hiring manager, startup, SMB, agency</td><td class="col-sk">Staffing agencies &amp; enterprise recruitment teams</td></tr>
+      <tr><td>Deployment</td><td class="col-tm">Web app — no install needed</td><td class="col-sk">Cloud + on-premises for enterprise</td></tr>
+      <tr><td>Historical learning</td><td class="col-tm">Consistent criteria every time</td><td class="col-sk">Trains on your past hiring data over time</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="diff-cards">
+    <div class="diff-card diff-us">
+      <div class="diff-label">Where TalentMesh wins</div>
+      <ul>
+        <li>✅ Works in 2 minutes — no sales call, no onboarding</li>
+        <li>✅ Real profile verification across 4 live platforms</li>
+        <li>✅ Free to start — accessible to any team size</li>
+        <li>✅ Transferable skills matching catches hidden talent Skima misses</li>
+        <li>✅ Built for hiring managers, not just professional recruiters</li>
+        <li>✅ Handles Canva / image-based CVs via Vision OCR</li>
+      </ul>
+    </div>
+    <div class="diff-card diff-them">
+      <div class="diff-label">Where Skima AI has the edge</div>
+      <ul>
+        <li>📨 Automated candidate outreach campaigns</li>
+        <li>🔌 130+ ATS / CRM / HRIS integrations out-of-the-box</li>
+        <li>📈 Learns from your historical hiring data over time</li>
+        <li>🏢 Enterprise on-premises deployment option</li>
+        <li>👥 Built for high-volume staffing agencies</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTEGRATION SECTION ─────────────────────────── -->
+<section class="landing-features" id="integrateSection">
+  <h2>Integrating TalentMesh with your systems</h2>
+  <p class="section-sub">TalentMesh is API-first — it plugs into any job portal, ATS, or HR system that accepts webhooks or REST calls</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-ico">🔌</div>
+      <h3>REST API</h3>
+      <p>Every TalentMesh action is an API endpoint. External systems can submit a job, upload CVs, and retrieve ranked results programmatically — no UI required.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">📬</div>
+      <h3>Webhooks</h3>
+      <p>When a candidate applies on your job portal, it fires a webhook to TalentMesh. We screen the CV instantly and push the score back into your system.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">🗂️</div>
+      <h3>ATS Plugin</h3>
+      <p>For Greenhouse, Lever, Workday, and similar ATS platforms — TalentMesh sits as a screening layer. Scores appear on the candidate profile inside your existing ATS.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">🌐</div>
+      <h3>Job Portal Embed</h3>
+      <p>Companies running their own career portals can embed the TalentMesh screening engine via iframe or JS widget — applicants screened the moment they submit.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">📥</div>
+      <h3>Email Forwarding</h3>
+      <p>Set your applications inbox to forward CVs to a TalentMesh address. We parse, screen, and email results back — zero system changes needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-ico">🔄</div>
+      <h3>Zapier / Make</h3>
+      <p>Connect TalentMesh to 5,000+ tools via Zapier or Make — trigger screenings from Google Forms, Notion, Airtable, Slack, or any workflow you already use.</p>
+    </div>
+  </div>
+
+  <div class="integration-flow">
+    <div class="iflow-label">Example integration flow</div>
+    <div class="iflow-steps">
+      <div class="iflow-step"><span class="iflow-ico">🧑‍💼</span><span>Candidate applies on your job portal</span></div>
+      <div class="iflow-arrow">→</div>
+      <div class="iflow-step"><span class="iflow-ico">📬</span><span>Portal fires webhook to TalentMesh API</span></div>
+      <div class="iflow-arrow">→</div>
+      <div class="iflow-step"><span class="iflow-ico">🤖</span><span>TalentMesh screens &amp; scores CV</span></div>
+      <div class="iflow-arrow">→</div>
+      <div class="iflow-step"><span class="iflow-ico">📊</span><span>Score returned to your ATS / dashboard</span></div>
+      <div class="iflow-arrow">→</div>
+      <div class="iflow-step"><span class="iflow-ico">📧</span><span>PDF report sent to HR inbox</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FINAL CTA ────────────────────────────────────── -->
+<section class="landing-cta">
+  <h2>Ready to screen smarter?</h2>
+  <p>Try TalentMesh free — no account required, no credit card, no setup. Just upload CVs and see who rises to the top.</p>
+  <button class="btn-cta-large" onclick="launchApp()">Start Screening Now →</button>
+  <span class="cta-note">Free · No signup · Results in minutes</span>
+</section>
+
+</div><!-- end #landingView -->
+
+<!-- ══════════════════════════════════════════════════
+     APP VIEW — shown after clicking Try for Free
+══════════════════════════════════════════════════ -->
+<div id="appView">
+<div class="app-header">
+  <button class="app-back-btn" onclick="goToLanding()">← Back to Home</button>
+  <span style="font-size:13px;color:var(--text-light);">AI Recruitment Screening</span>
+</div>
 <main id="main">
   <div class="steps" id="stepsRow">
     <div class="step active" id="si1"><div class="step-num">1</div><div class="step-label">Job Details</div></div>
@@ -1610,10 +2113,11 @@
 
     <!-- Full ranked list -->
     <div id="cList"></div>
-    <button class="btn-new" onclick="reset()">+ Start a New Screening</button>
+    <button class="btn-new" onclick="goToLanding()">← Screen Another Role</button>
   </div>
 
 </main>
+</div><!-- end #appView -->
 
 <footer>
   TalentMesh AI &nbsp;·&nbsp; Part of <a href="https://nimbus-24.com">Nimbus-24</a> &nbsp;·&nbsp; <a href="https://talentmesh.nimbus-24.com/docs">API Documentation</a>
@@ -1627,6 +2131,21 @@
 <script>
 const API = 'https://hrassist-dqb3.onrender.com';
 let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null };
+
+  // ── VIEW SWITCHING ────────────────────────────────────────────────────────
+  function launchApp() {
+    document.getElementById('landingView').style.display = 'none';
+    document.getElementById('appView').style.display    = 'block';
+    reset();
+    goTo(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToLanding() {
+    document.getElementById('appView').style.display    = 'none';
+    document.getElementById('landingView').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // ── DARK MODE ──────────────────────────────────────────────────────────────
   function toggleDark() {
