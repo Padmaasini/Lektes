@@ -1,6 +1,8 @@
 # TalentMesh API - Requirements
-# Pinned for Render (Python 3.11) — pydantic-core has prebuilt wheels for 3.11
-# Do NOT mix pydantic v1 and v2 packages — everything below uses pydantic v2
+# Python 3.11 required (set PYTHON_VERSION=3.11.9 in Render env vars)
+# pydantic-core is NOT pinned directly — pydantic pins it automatically.
+# Pinning pydantic-core explicitly causes build failures when
+# the prebuilt wheel is missing for the host Python version.
 
 # ── Web Framework ──────────────────────────────────────────────
 fastapi==0.115.5
@@ -12,12 +14,11 @@ slowapi==0.1.9
 
 # ── Database ───────────────────────────────────────────────────
 sqlalchemy==2.0.36
-alembic==1.14.0
 
-# ── Pydantic (pin tightly — pydantic-core must match) ─────────
+# ── Pydantic — let it resolve pydantic-core itself ────────────
 pydantic==2.10.3
-pydantic-core==2.27.1
 pydantic-settings==2.7.0
+email-validator==2.2.0
 
 # ── CV Parsing ─────────────────────────────────────────────────
 PyMuPDF==1.24.14
@@ -41,4 +42,3 @@ reportlab==4.2.5
 
 # ── Utilities ──────────────────────────────────────────────────
 python-dotenv==1.0.1
-email-validator==2.2.0
