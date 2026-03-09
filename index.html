@@ -552,6 +552,83 @@
   /* ── FILE LIST ── */
   .file-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
+  /* ── GDPR CONSENT BOX ─────────────────────────────── */
+  .consent-box {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: var(--cream2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    line-height: 1.5;
+  }
+  .consent-label input[type="checkbox"] {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--emerald);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .consent-text { color: var(--text); }
+  .consent-text strong { color: var(--header-bg); }
+  .consent-note {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-light);
+    padding-left: 26px;
+  }
+  html.dark .consent-box { background: var(--cream2); border-color: var(--border); }
+  html.dark .consent-text strong { color: var(--cream); }
+
+  /* ── CANDIDATE FEEDBACK BUTTONS ───────────────────── */
+  .feedback-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .feedback-label {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-right: 4px;
+    flex: 1;
+  }
+  .btn-feedback {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    background: var(--cream);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-feedback:hover { border-color: var(--emerald); color: var(--emerald); }
+  .btn-feedback.active-shortlist {
+    background: #e8f5ee; border-color: var(--emerald);
+    color: var(--emerald);
+  }
+  .btn-feedback.active-reject {
+    background: #fdecea; border-color: #c0392b;
+    color: #c0392b;
+  }
+  html.dark .btn-feedback { background: var(--cream2); border-color: var(--border); color: var(--text); }
+  html.dark .btn-feedback.active-shortlist { background: #1a3a22; border-color: var(--emerald); color: var(--bright); }
+  html.dark .btn-feedback.active-reject { background: #3a1a1a; border-color: #e57373; color: #e57373; }
+
   .file-item {
     display: flex;
     align-items: center;
@@ -1916,6 +1993,20 @@
       </div>
 
       <div class="file-list" id="fileList"></div>
+
+      <!-- GDPR CONSENT — required before upload unlocks -->
+      <div class="consent-box" id="consentBox">
+        <label class="consent-label">
+          <input type="checkbox" id="consentCheck" onchange="updateUploadBtn()" />
+          <span class="consent-text">
+            <strong>Candidate consent confirmed</strong> — I confirm all candidates
+            whose CVs are uploaded have been informed their CV will be processed by
+            AI screening software and have consented under GDPR.
+          </span>
+        </label>
+        <div class="consent-note">🔒 CV data auto-deleted after 30 days · GDPR compliant</div>
+      </div>
+
       <div id="err2"></div>
 
       <div class="action-row">
@@ -2146,8 +2237,18 @@ function renderFiles() {
       <span class="file-size">${(f.size/1024).toFixed(0)} KB</span>
       <button class="file-remove" onclick="removeFile(${i})">×</button>
     </div>`).join('');
-  btn.disabled = !S.files.length;
-  cnt.textContent = S.files.length ? `(${S.files.length})` : '';
+  updateUploadBtn();
+}
+
+function updateUploadBtn() {
+  const btn     = document.getElementById('uploadBtn');
+  const cnt     = document.getElementById('fileCnt');
+  const consent = document.getElementById('consentCheck');
+  if (!btn) return;
+  const hasFiles   = S.files && S.files.length > 0;
+  const consented  = consent && consent.checked;
+  btn.disabled     = !(hasFiles && consented);
+  if (cnt) cnt.textContent = (S.files && S.files.length) ? `(${S.files.length})` : '';
 }
 
 function removeFile(i) { S.files.splice(i, 1); renderFiles(); }
@@ -2273,7 +2374,7 @@ async function createJob() {
 
 // ── STEP 2: UPLOAD ──
 async function uploadAll() {
-  const btn = document.getElementById('uploadBtn');
+  const btn   = document.getElementById('uploadBtn');
   const errEl = document.getElementById('err2');
   errEl.innerHTML = '';
   btn.disabled = true; btn.textContent = 'Uploading…';
@@ -2281,10 +2382,15 @@ async function uploadAll() {
   try {
     const fd = new FormData();
     S.files.forEach(f => fd.append('files', f));
-    const res = await fetch(`${API}/api/v1/candidates/upload-bulk/${S.jobId}`, { method: 'POST', body: fd });
+    fd.append('consent_given', 'true');   // GDPR — checkbox already validated
+    const res = await fetch(`${API}/api/v1/candidates/upload-bulk/${S.jobId}`, {
+      method: 'POST',
+      body: fd,
+      headers: apiHeaders()
+    });
     if (!res.ok) throw new Error(`Upload failed (${res.status})`);
     const data = await res.json();
-    toast(`${data.successful} of ${data.total_uploaded} CVs uploaded!`, 'success');
+    toast(`${data.successful} of ${S.files.length} CVs uploaded!`, 'success');
     goTo(3);
     runScreening();
   } catch(e) {
@@ -2590,11 +2696,91 @@ function renderResults(report) {
           </div>` : ''}
         </div>` : ''}
 
+        <div class="feedback-row">
+          <span class="feedback-label">HR decision:</span>
+          <button
+            class="btn-feedback ${(S.feedback && S.feedback[c.candidate_id || c.id]) === 'shortlist' ? 'active-shortlist' : ''}"
+            id="fb-shortlist-${c.candidate_id || c.id}"
+            onclick="submitFeedback('${c.candidate_id || c.id}', 'shortlist')">
+            👍 Shortlist
+          </button>
+          <button
+            class="btn-feedback ${(S.feedback && S.feedback[c.candidate_id || c.id]) === 'reject' ? 'active-reject' : ''}"
+            id="fb-reject-${c.candidate_id || c.id}"
+            onclick="submitFeedback('${c.candidate_id || c.id}', 'reject')">
+            👎 Reject
+          </button>
+        </div>
+
       </div>`;
   }).join('');
 }
 
-async function emailReport() {
+// ── FEEDBACK ──────────────────────────────────────────────────
+// S.feedback stores { candidate_id: "shortlist"|"reject" } for the session
+if (!S.feedback) S.feedback = {};
+
+async function submitFeedback(candidateId, decision) {
+  // Toggle off if clicking same button again
+  if (S.feedback[candidateId] === decision) {
+    decision = null;
+  }
+
+  // Update local state immediately (optimistic UI)
+  const prev = S.feedback[candidateId];
+  S.feedback[candidateId] = decision;
+
+  // Update button styles
+  const slBtn = document.getElementById(`fb-shortlist-${candidateId}`);
+  const rjBtn = document.getElementById(`fb-reject-${candidateId}`);
+  if (slBtn) {
+    slBtn.className = 'btn-feedback' + (decision === 'shortlist' ? ' active-shortlist' : '');
+  }
+  if (rjBtn) {
+    rjBtn.className = 'btn-feedback' + (decision === 'reject' ? ' active-reject' : '');
+  }
+
+  if (!decision) return; // Cleared — no API call needed
+
+  // Get HR email from job for submitted_by
+  const hrEmail = S.hrEmail || '';
+
+  try {
+    const res = await fetch(`${API}/api/v1/feedback/${candidateId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...apiHeaders() },
+      body: JSON.stringify({ decision, submitted_by: hrEmail })
+    });
+    if (!res.ok) throw new Error('Feedback save failed');
+    toast(decision === 'shortlist' ? '👍 Shortlisted' : '👎 Rejected', 'success');
+  } catch(e) {
+    // Revert on failure
+    S.feedback[candidateId] = prev;
+    if (slBtn) slBtn.className = 'btn-feedback' + (prev === 'shortlist' ? ' active-shortlist' : '');
+    if (rjBtn) rjBtn.className = 'btn-feedback' + (prev === 'reject' ? ' active-reject' : '');
+    toast('Could not save feedback', 'error');
+  }
+}
+
+// ── API HEADERS (injects X-API-Key if configured) ─────────────
+function apiHeaders() {
+  if (window._TM_API_KEY) return { 'X-API-Key': window._TM_API_KEY };
+  return {};
+}
+
+// Load API key from server config on startup
+(async function loadConfig() {
+  try {
+    const res = await fetch(`${API}/api/v1/health/config`);
+    if (res.ok) {
+      const cfg = await res.json();
+      // api_key_required tells us whether to prompt — key itself comes from env
+      // For the demo the key is stored in a meta tag or env var passed at build time
+      // Production: set window._TM_API_KEY via your deployment pipeline
+      window._TM_KEY_REQUIRED = cfg.api_key_required;
+    }
+  } catch(e) { /* config endpoint unreachable — open mode */ }
+})();
   const btns = document.querySelectorAll('.btn-email');
   const btn  = btns[btns.length - 1]; // last = email button
   btn.disabled = true; btn.textContent = 'Sending…';
