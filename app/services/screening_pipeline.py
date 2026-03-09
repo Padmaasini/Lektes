@@ -207,22 +207,6 @@ Return ONLY this JSON, no markdown, no explanation:
     return scored
 
 
-async def stage_verify_profiles
-
-        except Exception as e:
-            print(f"  ✗ Failed to score {candidate.full_name}: {e}")
-            scored.append({
-                "candidate_id": candidate.id,
-                "full_name": candidate.full_name,
-                "match_score": 0,
-                "justification": "Scoring failed due to parsing error.",
-                "red_flags": "CV could not be parsed correctly.",
-                "linkedin_url": candidate.linkedin_url,
-                "github_url": candidate.github_url,
-            })
-
-    return scored
-
 async def stage_verify_profiles(scored_candidates: List[dict]) -> List[dict]:
     """Stage 2: Verify LinkedIn and GitHub profiles."""
     from app.services.linkedin_service import verify_linkedin
