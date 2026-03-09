@@ -1,39 +1,51 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 
-
 class Settings(BaseSettings):
-    APP_NAME:    str = "TalentMesh"
-    APP_VERSION: str = "1.0.0"
-    DEBUG:       bool = False
+    # App
+    APP_NAME: str = "TalentMesh"
+    APP_VERSION: str = "0.1.0"
+    DEBUG: bool = False
 
     # Database
     DATABASE_URL: str = "sqlite:///./talentmesh.db"
 
-    # LLM — Groq (required)
+    # LLM - Groq
     GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
-    # Email reporting — Gmail SMTP (required for email)
-    GMAIL_USER:         Optional[str] = None
+    # Email - Resend (replaces Gmail SMTP — works on Render free tier)
+    RESEND_API_KEY: Optional[str] = None
+    RESEND_FROM_EMAIL: str = "TalentMesh <hr@nimbus-24.com>"
+
+    # Email - Gmail SMTP (legacy fallback)
+    GMAIL_USER: Optional[str] = None
     GMAIL_APP_PASSWORD: Optional[str] = None
 
-    # Profile verification — GitHub (optional, raises rate limit 60→5000/hr)
+    # LinkedIn
+    LINKEDIN_USERNAME: Optional[str] = None
+    LINKEDIN_PASSWORD: Optional[str] = None
+
+    # GitHub
     GITHUB_TOKEN: Optional[str] = None
 
-    # Email — Resend API (replaces Gmail SMTP, works on Render free tier)
-    RESEND_API_KEY: Optional[str] = None
-
-    # Profile verification — Kaggle (required for Kaggle verification)
-    KAGGLE_USERNAME: Optional[str] = None
-    KAGGLE_KEY:      Optional[str] = None
-
-    # File upload
+    # File Upload
     MAX_FILE_SIZE_MB: int = 10
-    UPLOAD_DIR:       str = "./uploads"
+    UPLOAD_DIR: str = "./uploads"
+
+    # ── SECURITY ──────────────────────────────────────────────
+    # Set TM_API_KEY on Render to protect all API endpoints.
+    # Frontend passes this in X-API-Key header automatically.
+    # Leave blank during local dev — all endpoints stay open.
+    TM_API_KEY: Optional[str] = None
+
+    # ── GDPR DATA RETENTION ───────────────────────────────────
+    # Candidate CV data is auto-deleted after this many days.
+    # Default 30 days — configurable per deployment.
+    DATA_RETENTION_DAYS: int = 30
 
     class Config:
-        env_file      = ".env"
+        env_file = ".env"
         case_sensitive = True
-
 
 settings = Settings()

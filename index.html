@@ -879,6 +879,25 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .btn-filled {
+    background: #fff8ec;
+    border: 1.5px solid #e6a817;
+    color: #7a5000;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 11px 22px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-filled:hover { background: #fde9a0; box-shadow: var(--shadow-sm); }
+  .btn-filled:disabled { opacity: 0.5; cursor: not-allowed; }
+  html.dark .btn-filled { background: #2a2000; border-color: #c8960c; color: #f5c842; }
+  html.dark .btn-filled:hover { background: #3a2e00; }
+
   /* ── CANDIDATE CARDS ── */
   /* old card styles removed — see card v2 below */
 
@@ -1215,6 +1234,19 @@
     text-overflow: ellipsis; max-width: 320px;
   }
   .edu-ico  { font-size: 13px; flex-shrink: 0; }
+
+  /* Red badge for experience outside required range */
+  .exp-mismatch {
+    background: #fdecea;
+    border: 1.5px solid #e57373;
+    color: #c0392b;
+    font-weight: 600;
+  }
+  html.dark .exp-mismatch {
+    background: #3a1a1a;
+    border-color: #e57373;
+    color: #ff8a80;
+  }
 
   /* Badges */
   .c-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 20px 10px 20px; }
@@ -1959,8 +1991,12 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Min. Experience (years)</label>
-            <input type="text" id="minExp" value="3" />
+            <label>Min. Experience <span style="font-weight:400;color:var(--text-light)">(years · 0 = fresher/any)</span></label>
+            <input type="number" id="minExp" value="0" min="0" max="30" placeholder="0" style="width:100%" />
+          </div>
+          <div class="form-group">
+            <label>Max. Experience <span style="font-weight:400;color:var(--text-light)">(years · 0 = no limit)</span></label>
+            <input type="number" id="maxExp" value="0" min="0" max="30" placeholder="0 = no upper limit" style="width:100%" />
           </div>
         </div>
       </div>
@@ -2004,7 +2040,7 @@
             AI screening software and have consented under GDPR.
           </span>
         </label>
-        <div class="consent-note">🔒 CV data auto-deleted after 30 days · GDPR compliant</div>
+        <div class="consent-note">🔒 CV data is permanently deleted the moment you mark the position as filled. If not marked, data is auto-deleted after 30 days as a safety fallback.</div>
       </div>
 
       <div id="err2"></div>
@@ -2084,6 +2120,7 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button class="btn-email" onclick="downloadReport()">⬇️ Download PDF</button>
         <button class="btn-email" onclick="emailReport()">📧 Email Report to HR</button>
+        <button class="btn-filled" id="btnFilled" onclick="markPositionFilled()">✅ Position Filled</button>
       </div>
     </div>
     <!-- Top 3 comparison -->
@@ -2338,10 +2375,11 @@ async function createJob() {
     jobPayload = {
       title:               parsedJob.title,
       description:         parsedJob.description,
-      required_skills:     parsedJob.required_skills ? parsedJob.required_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
-      nice_to_have_skills: parsedJob.nice_to_have_skills ? parsedJob.nice_to_have_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      required_skills:      parsedJob.required_skills ? parsedJob.required_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      nice_to_have_skills:  parsedJob.nice_to_have_skills ? parsedJob.nice_to_have_skills.split(',').map(s=>s.trim()).filter(Boolean) : [],
       min_experience_years: parsedJob.min_experience_years || 0,
-      hr_email:            email,
+      max_experience_years: parseInt(document.getElementById('maxExp').value) || 0,
+      hr_email:             email,
     };
   } else {
     // Manual mode
@@ -2349,16 +2387,19 @@ async function createJob() {
     const desc   = document.getElementById('jobDesc').value.trim();
     const email  = document.getElementById('hrEmail').value.trim();
     const minExp = parseInt(document.getElementById('minExp').value) || 0;
+    const maxExp = parseInt(document.getElementById('maxExp').value) || 0;
     if (!title) { errEl.innerHTML = '<div class="err-msg">Please enter a job title.</div>'; return; }
     if (!desc)  { errEl.innerHTML = '<div class="err-msg">Please enter a job description.</div>'; return; }
     if (!email) { errEl.innerHTML = '<div class="err-msg">Please enter the HR email address.</div>'; return; }
+    if (maxExp > 0 && minExp > maxExp) { errEl.innerHTML = '<div class="err-msg">Max experience must be greater than min experience.</div>'; return; }
     const raw = document.getElementById('reqInput').value.trim();
     if (raw) { S.reqSkills.push(raw); document.getElementById('reqInput').value = ''; }
     jobPayload = {
       title, description: desc,
-      required_skills:     S.reqSkills,
-      nice_to_have_skills: S.niceSkills,
+      required_skills:      S.reqSkills,
+      nice_to_have_skills:  S.niceSkills,
       min_experience_years: minExp,
+      max_experience_years: maxExp,
       hr_email: email,
     };
   }
@@ -2373,7 +2414,9 @@ async function createJob() {
     });
     if (!res.ok) throw new Error((await res.json()).detail || `Error ${res.status}`);
     const data = await res.json();
-    S.jobId = data.id;
+    S.jobId  = data.id;
+    S.minExp = data.min_experience_years || 0;
+    S.maxExp = data.max_experience_years || 0;
     toast('Job created!', 'success');
     goTo(2);
   } catch(e) {
@@ -2601,6 +2644,10 @@ function renderResults(report) {
   document.getElementById('rMeta').innerHTML =
     `Screened <strong>${report.total_candidates}</strong> candidates · Report ready for ${report.hr_email || 'HR'}`;
 
+  // Store experience range from report so card renderer can use it
+  S.minExp = report.min_experience_years || 0;
+  S.maxExp = report.max_experience_years || 0;
+
   const cands = report.top_candidates || [];
   if (!cands.length) {
     document.getElementById('cList').innerHTML =
@@ -2665,9 +2712,26 @@ function renderResults(report) {
       return edu.split(',')[0].trim();
     }
     const topDegree = highestDegree(c.education);
+    // Experience mismatch check — compare against job's required range
+    const candExp  = c.experience_years || 0;
+    const jobMin   = S.minExp || 0;
+    const jobMax   = S.maxExp || 0;
+    let expMismatch = null;
+    if (jobMax > 0 && candExp > jobMax) {
+      expMismatch = `Overqualified: ${candExp} yrs (role needs ${jobMin}–${jobMax} yrs)`;
+    } else if (jobMin === 0 && jobMax === 0 && candExp >= 3) {
+      expMismatch = `Overqualified for fresher role: ${candExp} yrs experience`;
+    } else if (jobMin > 0 && candExp < jobMin) {
+      expMismatch = `Under-experienced: ${candExp} yrs (role needs ${jobMin}+ yrs)`;
+    }
+
+    const expBadge = expMismatch
+      ? `<span class="edu-item exp-mismatch" title="${expMismatch}">⚠️ ${candExp} yrs</span>`
+      : (candExp ? `<span class="edu-item"><span class="edu-ico">💼</span>${candExp} yrs</span>` : '');
+
     const eduStrip = [
-      topDegree          ? `<span class="edu-item"><span class="edu-ico">🎓</span>${topDegree}</span>` : '',
-      c.experience_years ? `<span class="edu-item"><span class="edu-ico">💼</span>${c.experience_years} yrs</span>` : '',
+      topDegree ? `<span class="edu-item"><span class="edu-ico">🎓</span>${topDegree}</span>` : '',
+      expBadge,
     ].filter(Boolean).join('');
 
     return `
@@ -2812,7 +2876,47 @@ async function emailReport() {
   }
 }
 
-// ── DOWNLOAD PDF REPORT ──
+// ── POSITION FILLED — delete all CV data immediately ─────────
+async function markPositionFilled() {
+  if (!S.jobId) return;
+
+  // Confirmation dialog
+  const confirmed = window.confirm(
+    '✅ Mark this position as filled?\n\n' +
+    'This will permanently delete all candidate CV data for this role immediately.\n\n' +
+    'This action cannot be undone — make sure you have emailed or downloaded the report first.'
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btnFilled');
+  btn.disabled = true;
+  btn.textContent = 'Deleting CV data…';
+
+  try {
+    // Delete the entire job — cascades to all candidates and their CV files
+    const res = await fetch(`${API}/api/v1/jobs/${S.jobId}`, {
+      method: 'DELETE',
+      headers: apiHeaders()
+    });
+
+    if (!res.ok && res.status !== 204) {
+      throw new Error(`Delete failed (${res.status})`);
+    }
+
+    toast('✅ Position marked as filled. All CV data permanently deleted.', 'success');
+
+    // Short pause so the toast is readable, then go to landing
+    setTimeout(() => {
+      S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {} };
+      goToLanding();
+    }, 2500);
+
+  } catch(e) {
+    toast(`Could not delete CV data: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ Position Filled';
+  }
+}
 function downloadReport() {
   if (!S.reportData) { toast('No report data to download', 'error'); return; }
   const report   = S.reportData;
@@ -2898,7 +3002,8 @@ function reset() {
   document.getElementById('parsedPreview').style.display = 'none';
   switchTab('paste');
   ['jobTitle','jobDesc','hrEmail'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('minExp').value = '3';
+  document.getElementById('minExp').value = '0';
+  document.getElementById('maxExp').value = '0';
   ['reqWrap','niceWrap'].forEach((wId,i) => {
     const iId = i===0?'reqInput':'niceInput';
     document.getElementById(wId).innerHTML = '';

@@ -1,54 +1,134 @@
+"""
+TalentMesh API — main application entry point.
+
+Security: slowapi rate limiting (60 req/min per IP)
+GDPR: startup cleanup of expired candidate records
+New: /api/v1/feedback router, /api/v1/health/config endpoint
+"""
+
 import os
-from fastapi import FastAPI
+import logging
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from app.api.endpoints import jobs, candidates, screen, reports, health
-from app.core.config import settings
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+from app.api.endpoints import jobs, candidates, screen, reports, health, feedback
+from app.core.config import settings
+from app.core.database import SessionLocal, init_db
+
+logger = logging.getLogger(__name__)
+
+# ── RATE LIMITER ──────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+
+
+# ── GDPR STARTUP CLEANUP ──────────────────────────────────────
+def purge_expired_candidates() -> int:
+    db = SessionLocal()
+    try:
+        from app.models.candidate import Candidate
+        expired = (
+            db.query(Candidate)
+            .filter(Candidate.expires_at.isnot(None))
+            .filter(Candidate.expires_at < datetime.utcnow())
+            .all()
+        )
+        count = 0
+        for c in expired:
+            if c.cv_file_path and os.path.exists(c.cv_file_path):
+                try:
+                    os.remove(c.cv_file_path)
+                except OSError:
+                    pass
+            db.delete(c)
+            count += 1
+        if count:
+            db.commit()
+        return count
+    except Exception as e:
+        logger.error(f"[GDPR] Cleanup error: {e}")
+        return 0
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    purged = purge_expired_candidates()
+    if purged:
+        logger.info(f"[Startup] GDPR cleanup: removed {purged} expired candidate records.")
+    yield
+
+
+# ── APP ────────────────────────────────────────────────────────
 app = FastAPI(
-    title="TalentMesh API",
-    description="AI-powered recruitment screening agent. Upload CVs, verify profiles, and get ranked candidate reports.",
-    version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    title       = "TalentMesh API",
+    description = "AI-powered recruitment screening — parse CVs, verify profiles, rank candidates.",
+    version     = "0.2.0",
+    docs_url    = "/docs",
+    redoc_url   = "/redoc",
+    lifespan    = lifespan,
 )
 
-# CORS
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ── CORS ───────────────────────────────────────────────────────
+ALLOWED_ORIGINS = (
+    ["https://talentmesh.nimbus-24.com", "https://hrassist-dqb3.onrender.com"]
+    if not settings.DEBUG
+    else ["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "X-API-Key"],
 )
 
-# Routers
-app.include_router(health.router, tags=["Health"])
-app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])
+# ── ROUTERS ────────────────────────────────────────────────────
+app.include_router(health.router,     tags=["Health"])
+app.include_router(jobs.router,       prefix="/api/v1/jobs",       tags=["Jobs"])
 app.include_router(candidates.router, prefix="/api/v1/candidates", tags=["Candidates"])
-app.include_router(screen.router, prefix="/api/v1/screen", tags=["Screening"])
-app.include_router(reports.router, prefix="/api/v1/reports", tags=["Reports"])
+app.include_router(screen.router,     prefix="/api/v1/screen",     tags=["Screening"])
+app.include_router(reports.router,    prefix="/api/v1/reports",    tags=["Reports"])
+app.include_router(feedback.router,   prefix="/api/v1/feedback",   tags=["Feedback"])
 
+
+# ── FRONTEND ────────────────────────────────────────────────────
 @app.get("/", tags=["Frontend"])
 async def frontend():
-    # Try multiple possible locations for index.html
-    possible_paths = [
-        "index.html",                                          # root of project
-        os.path.join(os.getcwd(), "index.html"),              # absolute cwd
-        os.path.join(os.path.dirname(__file__), "..", "index.html"),  # relative to app/
-    ]
-    for path in possible_paths:
+    for path in [
+        "index.html",
+        os.path.join(os.getcwd(), "index.html"),
+        os.path.join(os.path.dirname(__file__), "..", "index.html"),
+    ]:
         if os.path.exists(path):
             return FileResponse(path, media_type="text/html")
-
-    # Fallback if file not found — redirect to docs
     return HTMLResponse("""
-    <html>
-    <body style="font-family:sans-serif;text-align:center;padding:80px;background:#faf7f2">
+    <html><body style="font-family:sans-serif;text-align:center;padding:80px;background:#faf7f2">
         <h1 style="color:#2d7a4f">TalentMesh API is Running</h1>
-        <p>Frontend file not found. <a href="/docs">Open API Docs →</a></p>
-        <p style="color:#999;font-size:12px">index.html not found in: """ + str(possible_paths) + """</p>
-    </body>
-    </html>
+        <p>Frontend not found. <a href="/docs">Open API Docs →</a></p>
+    </body></html>
     """, status_code=200)
+
+
+# ── CONFIG ENDPOINT (public) ───────────────────────────────────
+@app.get("/api/v1/health/config", tags=["Health"])
+async def get_config():
+    """Tells frontend whether API key auth is active. Never returns the key itself."""
+    return {
+        "api_key_required":  bool(settings.TM_API_KEY),
+        "resend_configured": bool(settings.RESEND_API_KEY),
+        "retention_days":    settings.DATA_RETENTION_DAYS,
+        "version":           settings.APP_VERSION,
+    }
