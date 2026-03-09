@@ -2120,6 +2120,8 @@ let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [],
     reset();
     goTo(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Push a state so the browser back button returns to landing, not Google
+    history.pushState({ view: 'app' }, '', window.location.href);
   }
 
   function goToLanding() {
@@ -2127,6 +2129,16 @@ let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [],
     document.getElementById('landingView').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // Browser back button — intercept and go to landing instead of leaving the page
+  window.addEventListener('popstate', function(e) {
+    const appView = document.getElementById('appView');
+    if (appView && appView.style.display !== 'none') {
+      goToLanding();
+      // Push state again so back still works if they re-enter app
+      history.pushState({ view: 'landing' }, '', window.location.href);
+    }
+  });
 
   // ── DARK MODE ──────────────────────────────────────────────────────────────
   function toggleDark() {
