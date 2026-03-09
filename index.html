@@ -2781,6 +2781,8 @@ function apiHeaders() {
     }
   } catch(e) { /* config endpoint unreachable — open mode */ }
 })();
+
+async function emailReport() {
   const btns = document.querySelectorAll('.btn-email');
   const btn  = btns[btns.length - 1]; // last = email button
   btn.disabled = true; btn.textContent = 'Sending…';
