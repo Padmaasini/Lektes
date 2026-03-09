@@ -1,37 +1,44 @@
 # TalentMesh API - Requirements
+# Pinned for Render (Python 3.11) — pydantic-core has prebuilt wheels for 3.11
+# Do NOT mix pydantic v1 and v2 packages — everything below uses pydantic v2
 
-# Web Framework
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
+# ── Web Framework ──────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
 python-multipart==0.0.12
 
-# Rate Limiting (security)
+# ── Rate Limiting ──────────────────────────────────────────────
 slowapi==0.1.9
 
-# Database
+# ── Database ───────────────────────────────────────────────────
 sqlalchemy==2.0.36
-pydantic-settings==2.6.1
+alembic==1.14.0
 
-# CV Parsing
-PyMuPDF==1.24.13
+# ── Pydantic (pin tightly — pydantic-core must match) ─────────
+pydantic==2.10.3
+pydantic-core==2.27.1
+pydantic-settings==2.7.0
+
+# ── CV Parsing ─────────────────────────────────────────────────
+PyMuPDF==1.24.14
 python-docx==1.1.2
 pdfplumber==0.11.4
 
-# LLM - Groq
-groq==0.11.0
-langchain-groq
-langchain-core
-langgraph
+# ── LLM / Agentic Pipeline ─────────────────────────────────────
+groq==0.13.1
+langchain-core==0.3.28
+langchain-groq==0.2.3
+langgraph==0.2.60
 
-# Email - Resend (replaces Gmail SMTP)
-resend
+# ── Email ──────────────────────────────────────────────────────
+resend==2.5.0
 
-# External Profile Verification
-httpx==0.27.2
+# ── Profile Verification ───────────────────────────────────────
+httpx==0.28.1
 
-# PDF Report Generation
-reportlab
+# ── PDF Report Generation ──────────────────────────────────────
+reportlab==4.2.5
 
-# Utilities
+# ── Utilities ──────────────────────────────────────────────────
 python-dotenv==1.0.1
-pydantic[email]==2.10.2
+email-validator==2.2.0
