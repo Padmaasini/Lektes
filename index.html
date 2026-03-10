@@ -2452,7 +2452,10 @@ async function parseJobAd() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw_text: text })
     });
-    if (!res.ok) throw new Error('Could not parse job posting');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not parse job posting');
+    }
     parsedJob = await res.json();
 
     // Show preview
