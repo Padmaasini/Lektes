@@ -590,8 +590,10 @@
     color: var(--text-light);
     padding-left: 26px;
   }
-  html.dark .consent-box { background: var(--cream2); border-color: var(--border); }
-  html.dark .consent-text strong { color: var(--cream); }
+  html.dark .consent-box         { background: #1a2a1a; border-color: var(--border); }
+  html.dark .consent-text        { color: var(--text-dark); }
+  html.dark .consent-text strong { color: #a8e6c0; }
+  html.dark .consent-note        { color: var(--text-mid); }
 
   /* ── CANDIDATE FEEDBACK BUTTONS ───────────────────── */
   .feedback-row {
@@ -884,6 +886,15 @@
     background: var(--emerald-mid);
     box-shadow: var(--shadow-sm);
   }
+  html.dark .btn-email {
+    background: #1a3d2a;
+    border-color: var(--emerald);
+    color: #a8e6c0;
+  }
+  html.dark .btn-email:hover {
+    background: #1e4a30;
+    color: #c8f0d8;
+  }
 
   .btn-filled {
     background: #fff8ec;
@@ -1038,6 +1049,14 @@
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { border-color: var(--emerald-mid); }
   .toast.error { border-color: #f5c0b8; }
+  html.dark .toast {
+    background: #1a2a1a;
+    color: var(--text-dark);
+    border-color: var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  html.dark .toast.success { border-color: var(--emerald); }
+  html.dark .toast.error   { border-color: #e57373; }
 
   .btn-new {
     display: block;
