@@ -904,6 +904,101 @@
   html.dark .btn-filled { background: #2a2000; border-color: #c8960c; color: #f5c842; }
   html.dark .btn-filled:hover { background: #3a2e00; }
 
+  /* ── INTERVIEW QUESTIONS ── */
+  .q-candidate-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .q-candidate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--cream);
+    cursor: pointer;
+    gap: 12px;
+    user-select: none;
+  }
+  .q-candidate-header:hover { background: var(--emerald-light); }
+  .q-candidate-name { font-weight: 700; font-size: 15px; color: var(--header-bg); }
+  .q-candidate-meta { font-size: 13px; color: var(--text-mid); }
+  .q-chevron { font-size: 12px; color: var(--text-light); transition: transform 0.2s; }
+  .q-candidate-body { display: none; padding: 0 18px 18px; }
+  .q-candidate-body.open { display: block; }
+  .q-chevron.open { transform: rotate(180deg); }
+
+  .q-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .q-item:last-child { border-bottom: none; }
+  .q-num-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .q-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--forest); color: white;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .q-category { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+  .q-question { font-size: 15px; font-weight: 600; color: var(--header-bg); margin: 0 0 8px 30px; }
+  .q-why {
+    font-size: 12px; color: var(--text-mid);
+    background: var(--emerald-light); border-radius: 6px;
+    padding: 8px 12px; margin: 0 0 12px 30px; line-height: 1.5;
+  }
+  .q-answers { margin-left: 30px; display: flex; flex-direction: column; gap: 8px; }
+  .q-answer {
+    border-radius: 7px; padding: 10px 14px;
+    border-left: 3px solid transparent;
+  }
+  .q-answer.strong  { background: #edf7f1; border-color: var(--emerald); }
+  .q-answer.acceptable { background: #fffbeb; border-color: #d97706; }
+  .q-answer.weak    { background: #fdf0ee; border-color: #c0392b; }
+  .q-answer-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .q-answer.strong  .q-answer-label { color: var(--emerald); }
+  .q-answer.acceptable .q-answer-label { color: #d97706; }
+  .q-answer.weak    .q-answer-label { color: #c0392b; }
+  .q-answer-text { font-size: 13px; font-style: italic; color: var(--text-dark); margin-bottom: 3px; }
+  .q-answer-signal { font-size: 12px; color: var(--text-mid); }
+  .q-followup {
+    font-size: 12px; color: var(--text-light);
+    margin: 8px 0 0 30px;
+  }
+  .q-record {
+    margin: 10px 0 0 30px;
+    background: white;
+    border: 1.5px dashed var(--border);
+    border-radius: 7px;
+    padding: 2px 4px;
+  }
+  .q-record textarea {
+    width: 100%; border: none; background: transparent;
+    font-size: 13px; color: var(--text-dark);
+    resize: none; min-height: 60px;
+    font-family: var(--font-body); padding: 8px;
+    outline: none;
+  }
+  .q-record-label {
+    font-size: 11px; color: var(--text-light);
+    padding: 6px 10px 0; font-style: italic;
+  }
+  .q-loading { text-align: center; padding: 32px; color: var(--text-light); font-size: 14px; }
+
+  html.dark .q-candidate-header { background: #1a2a1a; }
+  html.dark .q-candidate-header:hover { background: #1e3a1e; }
+  html.dark .q-candidate-name { color: var(--cream); }
+  html.dark .q-answer.strong  { background: #1a3a22; }
+  html.dark .q-answer.acceptable { background: #2a2000; }
+  html.dark .q-answer.weak    { background: #3a1a1a; }
+  html.dark .q-record { background: #111e11; border-color: #2a3a2a; }
+  html.dark .q-record textarea { color: var(--cream); }
+
   /* ── CANDIDATE CARDS ── */
   /* old card styles removed — see card v2 below */
 
@@ -2128,7 +2223,7 @@
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button class="btn-email" onclick="downloadReport()">⬇️ Download PDF</button>
-        <button class="btn-email" onclick="emailReport()">📧 Email Report to HR</button>
+        <button class="btn-email" onclick="emailReport()">📧 Email Report + Questions to HR</button>
         <button class="btn-filled" id="btnFilled" onclick="markPositionFilled()">✅ Position Filled</button>
       </div>
     </div>
@@ -2140,6 +2235,21 @@
 
     <!-- Full ranked list -->
     <div id="cList"></div>
+
+    <!-- Interview Questions Panel -->
+    <div id="questionsPanel" style="display:none;margin-top:32px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <div>
+            <div class="card-title">Interview Questions</div>
+            <div class="card-subtitle">Tailored questions per candidate with likely answers — helps HR conduct a structured screening call</div>
+          </div>
+        </div>
+        <div id="questionsList"></div>
+      </div>
+    </div>
+
     <button class="btn-new" onclick="goToLanding()">← Screen Another Role</button>
   </div>
 
@@ -2795,6 +2905,12 @@ function renderResults(report) {
             onclick="submitFeedback('${c.candidate_id || c.id}', 'reject')">
             👎 Reject
           </button>
+          <button
+            class="btn-feedback"
+            style="margin-left:auto;border-color:var(--emerald);color:var(--emerald);"
+            onclick="loadQuestionsForCandidate('${c.candidate_id || c.id}', '${(c.name||c.full_name||'').replace(/'/g,"\\'")}', ${c.match_score||0}, ${rank})">
+            📋 Interview Questions
+          </button>
         </div>
 
       </div>`;
@@ -2869,21 +2985,115 @@ function apiHeaders() {
 
 async function emailReport() {
   const btns = document.querySelectorAll('.btn-email');
-  const btn  = btns[btns.length - 1]; // last = email button
-  btn.disabled = true; btn.textContent = 'Sending…';
+  const btn  = btns[btns.length - 1];
+  btn.disabled = true; btn.textContent = 'Generating questions & sending…';
   try {
-    const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, { method:'POST' });
+    const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, { method:'POST', headers: apiHeaders() });
     if (!res.ok) {
       const err = await res.json().catch(()=>({}));
       throw new Error(err.detail || `Error ${res.status}`);
     }
-    toast('Report emailed to HR! 📧', 'success');
+    toast('Report + interview questions emailed to HR! 📧', 'success');
   } catch(e) {
     toast(`Email failed: ${e.message}`, 'error');
   } finally {
-    btn.disabled = false; btn.textContent = '📧 Email Report to HR';
+    btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
   }
 }
+
+// ── INTERVIEW QUESTIONS ───────────────────────────────────────────────────
+// S.questions stores { candidate_id: { questions: [...], loaded: bool } }
+if (!S.questions) S.questions = {};
+
+async function loadQuestionsForCandidate(candidateId, candidateName, matchScore, rank) {
+  const panel = document.getElementById('questionsPanel');
+  const list  = document.getElementById('questionsList');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Already loaded — just toggle open
+  if (S.questions[candidateId]) {
+    toggleQBlock(candidateId);
+    return;
+  }
+
+  // Create placeholder block
+  const blockId = `qblock-${candidateId}`;
+  const existing = document.getElementById(blockId);
+  if (!existing) {
+    const block = document.createElement('div');
+    block.id = blockId;
+    block.className = 'q-candidate-block';
+    block.innerHTML = `
+      <div class="q-candidate-header" onclick="toggleQBlock('${candidateId}')">
+        <div>
+          <div class="q-candidate-name">#${rank} ${candidateName}</div>
+          <div class="q-candidate-meta">${matchScore}% match</div>
+        </div>
+        <span class="q-chevron open" id="qchev-${candidateId}">▼</span>
+      </div>
+      <div class="q-candidate-body open" id="qbody-${candidateId}">
+        <div class="q-loading">⏳ Generating tailored questions…</div>
+      </div>`;
+    list.appendChild(block);
+  }
+
+  try {
+    const res  = await fetch(`${API}/api/v1/reports/${S.jobId}/questions/${candidateId}`, { headers: apiHeaders() });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const data = await res.json();
+    S.questions[candidateId] = data;
+    renderQBlock(candidateId, data);
+  } catch(e) {
+    const body = document.getElementById(`qbody-${candidateId}`);
+    if (body) body.innerHTML = `<div style="padding:16px;color:#c0392b;font-size:13px;">❌ Could not load questions: ${e.message}</div>`;
+  }
+}
+
+function toggleQBlock(candidateId) {
+  const body = document.getElementById(`qbody-${candidateId}`);
+  const chev = document.getElementById(`qchev-${candidateId}`);
+  if (!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chev) chev.classList.toggle('open', !isOpen);
+}
+
+function renderQBlock(candidateId, data) {
+  const body = document.getElementById(`qbody-${candidateId}`);
+  if (!body) return;
+
+  const qualityClass = { 'Strong': 'strong', 'Acceptable': 'acceptable', 'Weak': 'weak' };
+
+  const questionsHtml = (data.questions || []).map(q => {
+    const answersHtml = (q.likely_answers || []).map(a => `
+      <div class="q-answer ${qualityClass[a.quality] || ''}">
+        <div class="q-answer-label">${a.quality} Answer</div>
+        <div class="q-answer-text">"${a.answer}"</div>
+        <div class="q-answer-signal">→ ${a.what_it_signals}</div>
+      </div>`).join('');
+
+    return `
+    <div class="q-item">
+      <div class="q-num-row">
+        <div class="q-num">${q.number}</div>
+        <div class="q-category">${q.category || ''}</div>
+      </div>
+      <div class="q-question">${q.question}</div>
+      <div class="q-why">💡 <strong>Why we ask:</strong> ${q.why_we_ask}</div>
+      <div class="q-answers">${answersHtml}</div>
+      <div class="q-followup">🔁 <strong>Follow-up if vague:</strong> ${q.follow_up}</div>
+      <div class="q-record">
+        <div class="q-record-label">📝 Record candidate's actual answer here</div>
+        <textarea placeholder="Type or paste candidate's answer during the call…"></textarea>
+      </div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = questionsHtml;
+}
+
+
 
 // ── POSITION FILLED — delete all CV data immediately ─────────
 async function markPositionFilled() {
@@ -2916,7 +3126,7 @@ async function markPositionFilled() {
 
     // Short pause so the toast is readable, then go to landing
     setTimeout(() => {
-      S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {} };
+      S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
       goToLanding();
     }, 2500);
 
@@ -3032,9 +3242,10 @@ function reset() {
     b.className='stage-badge badge-wait'; b.textContent='Waiting';
   }
   setProgress(0,'Starting up…');
-  // Hide comparison section so it doesn't persist from last run
   const comp = document.getElementById('comparisonSection');
   if (comp) comp.style.display = 'none';
+  const qp = document.getElementById('questionsPanel');
+  if (qp) { qp.style.display = 'none'; document.getElementById('questionsList').innerHTML = ''; }
   document.getElementById('cList').innerHTML = '';
   S.reportData = null;
   goTo(1);

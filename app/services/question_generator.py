@@ -1,44 +1,69 @@
 import json
 from app.services.llm_service import get_scoring_response
 
-async def generate_technical_questions(job, candidate) -> list:
+
+async def generate_interview_questions(job, candidate) -> list:
     """
-    Generate 2-3 tailored technical screening questions for a candidate.
-    Each question includes an answer blueprint so HR knows what to listen for.
+    Generate 5 tailored interview questions for a candidate.
+    Each question includes:
+    - Plain English context so non-technical HR understands WHY this is being asked
+    - 3 likely answer variations (strong / acceptable / weak)
+    - A follow-up if the answer is vague
+    - Space for HR to record the actual answer
     """
     prompt = f"""
-    Generate exactly 3 technical screening questions for this candidate interview.
-    
-    JOB TITLE: {job.title}
-    JOB DESCRIPTION: {job.description[:1000]}
-    REQUIRED SKILLS: {job.required_skills}
-    
-    CANDIDATE PROFILE:
-    Name: {candidate.full_name}
-    Skills: {candidate.skills}
-    Experience: {candidate.experience_years} years
-    Match Score: {candidate.match_score}%
-    
-    Rules:
-    - Questions should probe the candidate's specific experience
-    - Target any gaps between their CV and the job requirements
-    - Questions should be open-ended, not yes/no
-    - Provide a clear answer blueprint for each question
-    
-    Return ONLY this JSON array:
-    [
-        {{
-            "question_number": 1,
-            "question": "The interview question here",
-            "what_to_listen_for": "Key concepts and points a good answer must cover",
-            "weak_answer_looks_like": "What a poor or vague answer sounds like",
-            "strong_answer_looks_like": "What an excellent answer includes",
-            "follow_up": "A follow-up question if the initial answer is vague"
-        }}
-    ]
-    
-    Return ONLY the JSON array. No explanation.
-    """
+You are helping a non-technical HR professional interview a candidate for a technical role.
+
+JOB TITLE: {job.title}
+REQUIRED SKILLS: {job.required_skills}
+JOB DESCRIPTION: {job.description[:800]}
+
+CANDIDATE NAME: {candidate.full_name}
+CANDIDATE SKILLS: {candidate.skills}
+CANDIDATE EXPERIENCE: {candidate.experience_years} years
+CANDIDATE SCORE: {candidate.match_score}%
+CANDIDATE RED FLAGS: {candidate.red_flags or "None"}
+
+Generate exactly 5 interview questions. Mix of:
+- 2 technical questions about their claimed skills (but phrased so HR can follow the answer)
+- 1 question probing a gap or red flag in their profile
+- 1 situational/behavioural question relevant to the role
+- 1 motivation/culture fit question
+
+For each question provide:
+- A plain English note to HR explaining WHY this question is being asked and what skill/concern it probes
+- 3 likely answer variations a candidate might give: one strong, one acceptable, one weak
+- Each variation should be a realistic 2-3 sentence answer a real person might say
+- A follow-up question if the initial answer is vague
+
+Return ONLY this JSON array, no markdown, no explanation:
+[
+    {{
+        "number": 1,
+        "category": "Technical / Behavioural / Motivation / Gap Probe",
+        "question": "The question to ask the candidate",
+        "why_we_ask": "Plain English: what skill or concern this probes, and what a good answer tells you",
+        "likely_answers": [
+            {{
+                "quality": "Strong",
+                "answer": "A realistic strong answer a good candidate might give",
+                "what_it_signals": "One sentence on what this signals about the candidate"
+            }},
+            {{
+                "quality": "Acceptable",
+                "answer": "A realistic acceptable answer — shows basic competence but not depth",
+                "what_it_signals": "One sentence on what this signals"
+            }},
+            {{
+                "quality": "Weak",
+                "answer": "A realistic weak or evasive answer — vague or showing a gap",
+                "what_it_signals": "One sentence on what this signals"
+            }}
+        ],
+        "follow_up": "A follow-up question to probe deeper if the answer is vague"
+    }}
+]
+"""
 
     response = await get_scoring_response(prompt)
     clean = response.strip().replace("```json", "").replace("```", "").strip()

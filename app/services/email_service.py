@@ -1,169 +1,237 @@
-import httpx
+"""
+TalentMesh Email Service — Resend API
+Sends screening report as PDF attachment.
+Email body contains interview questions + likely answers per candidate.
+"""
 import base64
-from typing import List
+from typing import List, Optional
+import resend
 from app.core.config import settings
 
 
-def get_highest_degree(education: str) -> str:
-    """Extract only the highest degree from an education string."""
-    if not education:
-        return ''
-    edu_lower = education.lower()
-    # Priority order — highest first
-    if any(x in edu_lower for x in ["phd", "ph.d", "doctorate", "doctoral"]):
-        # Return just the PhD part
-        for part in education.split(','):
-            if any(x in part.lower() for x in ["phd", "ph.d", "doctorate"]):
-                return part.strip()
-    if any(x in edu_lower for x in ["master", "msc", "m.sc", "mba", "m.tech", "mtech", "me,"]):
-        for part in education.split(','):
-            if any(x in part.lower() for x in ["master", "msc", "mba", "m.tech", "mtech"]):
-                return part.strip()
-        # fallback — return up to first separator
-        return education.split('Bachelor')[0].split('B.Tech')[0].strip().rstrip(',')
-    if any(x in edu_lower for x in ["bachelor", "bsc", "b.sc", "b.tech", "btech", "be,"]):
-        for part in education.split(','):
-            if any(x in part.lower() for x in ["bachelor", "bsc", "b.tech", "btech"]):
-                return part.strip()
-    # Fallback — return first segment
-    return education.split(',')[0].strip()
+def _init_resend():
+    if settings.RESEND_API_KEY:
+        resend.api_key = settings.RESEND_API_KEY
+        return True
+    return False
 
 
-def build_email_html(job_title: str, candidates: List[dict]) -> str:
-    def score_color(s):
-        return "#2d7a4f" if s >= 70 else "#d97706" if s >= 45 else "#c0392b"
-    def score_label(s):
-        return "Strong Match" if s >= 70 else "Partial Match" if s >= 45 else "Weak Match"
+async def send_report_email(
+    job,
+    candidates: List,
+    pdf_bytes: bytes,
+    questions_by_candidate: Optional[dict] = None
+) -> bool:
+    """
+    Send screening report email via Resend.
+    - PDF report attached
+    - Email body contains interview questions + likely answers per candidate
+    """
+    if not _init_resend():
+        print("  ⚠️  RESEND_API_KEY not configured — skipping email")
+        return False
 
-    rows = ""
-    for c in candidates:
-        score   = c.get("match_score", 0)
-        edu_raw = c.get("education") or ""
-        edu     = get_highest_degree(edu_raw)
-        exp     = c.get("experience_years")
+    try:
+        from_email = settings.RESEND_FROM_EMAIL or "TalentMesh <noreply@talentmesh.nimbus-24.com>"
+        subject    = f"TalentMesh Report: {job.title} — {len(candidates)} Candidates Ranked"
 
-        red_flag = (
-            f'<div style="margin-top:8px;padding:8px 10px;background:#fdf0ee;'
-            f'border-left:3px solid #c0392b;font-size:13px;color:#a93226;">'
-            f'⚠️ {c.get("red_flags")}</div>'
-        ) if c.get("red_flags") else ""
+        html_body  = build_email_html(job, candidates, questions_by_candidate)
 
-        profiles = ""
-        if c.get("linkedin_url"):
-            profiles += f'<a href="{c["linkedin_url"]}" style="color:#2d7a4f;margin-right:12px;">LinkedIn</a>'
-        if c.get("github_url"):
-            profiles += f'<a href="{c["github_url"]}" style="color:#2d7a4f;margin-right:12px;">GitHub</a>'
-        if c.get("kaggle_url"):
-            profiles += f'<a href="{c["kaggle_url"]}" style="color:#2d7a4f;margin-right:12px;">Kaggle</a>'
-        if c.get("stackoverflow_url"):
-            profiles += f'<a href="{c["stackoverflow_url"]}" style="color:#2d7a4f;">StackOverflow</a>'
+        # Encode PDF as base64 for attachment
+        pdf_b64    = base64.b64encode(pdf_bytes).decode("utf-8")
+        filename   = f"TalentMesh_{job.title.replace(' ', '_')}_Report.pdf"
 
-        meta_parts = []
-        if c.get("email"): meta_parts.append(c["email"])
-        if exp:            meta_parts.append(f"{exp} yrs exp")
-        if edu:            meta_parts.append(f"🎓 {edu}")
+        params = {
+            "from":    from_email,
+            "to":      [job.hr_email],
+            "subject": subject,
+            "html":    html_body,
+            "attachments": [
+                {
+                    "filename":    filename,
+                    "content":     pdf_b64,
+                    "content_type": "application/pdf"
+                }
+            ]
+        }
 
-        rows += f"""<tr style="border-bottom:1px solid #ede8de;">
-          <td style="padding:16px;font-weight:700;font-size:18px;color:#1a2e1a;text-align:center;width:42px;">
-            #{c.get("rank","—")}
-          </td>
-          <td style="padding:16px;">
-            <div style="font-weight:600;font-size:15px;color:#1c2b1c;">{c.get("name") or c.get("full_name") or "Unknown"}</div>
-            <div style="font-size:12px;color:#8aaa95;margin-top:3px;">{" · ".join(meta_parts)}</div>
-            {f'<div style="margin-top:6px;font-size:12px;">{profiles}</div>' if profiles else ""}
-            <div style="margin-top:8px;font-size:13px;color:#4a6355;line-height:1.5;">{c.get("justification","")}</div>
-            {red_flag}
-          </td>
-          <td style="padding:16px;text-align:center;width:90px;">
-            <div style="font-size:28px;font-weight:700;color:{score_color(score)};">{score}%</div>
-            <div style="font-size:11px;color:{score_color(score)};font-weight:600;margin-top:2px;">{score_label(score)}</div>
+        resend.Emails.send(params)
+        print(f"  📧 Report + questions emailed to {job.hr_email}")
+        return True
+
+    except Exception as e:
+        print(f"  Email error: {e}")
+        return False
+
+
+def build_email_html(job, candidates: List, questions_by_candidate: Optional[dict] = None) -> str:
+    """
+    Build the email HTML body.
+    - Clean intro, no report table (that's in the PDF attachment)
+    - Interview questions + likely answers for each top candidate
+    """
+
+    # ── Candidate summary rows (compact, no full report) ──
+    summary_rows = ""
+    for c in candidates[:5]:  # top 5 only in email
+        score = round(c.match_score or 0, 1)
+        color = "#2d7a4f" if score >= 70 else "#d97706" if score >= 45 else "#c0392b"
+        bg    = "#edf7f1" if score >= 70 else "#fffbeb" if score >= 45 else "#fdf0ee"
+        summary_rows += f"""
+        <tr>
+          <td style="padding:10px 14px;font-weight:700;color:#1a2e1a;">#{c.rank}</td>
+          <td style="padding:10px 14px;color:#1a2e1a;">{c.full_name or "Unknown"}</td>
+          <td style="padding:10px 14px;color:#555;font-size:13px;">{c.email or "—"}</td>
+          <td style="padding:10px 14px;text-align:center;">
+            <span style="background:{bg};color:{color};padding:4px 12px;border-radius:20px;font-weight:700;font-size:13px;border:1px solid {color}30;">
+              {score}%
+            </span>
           </td>
         </tr>"""
 
-    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#faf7f2;font-family:Arial,sans-serif;">
-  <div style="max-width:680px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(26,46,26,0.08);">
-    <div style="background:#1a2e1a;padding:32px 40px;">
-      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">🌿 TalentMesh</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;">AI Recruitment Screening Report</div>
-    </div>
-    <div style="padding:28px 40px 0;">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#8aaa95;letter-spacing:0.1em;">Screening results for</div>
-      <div style="font-size:26px;font-weight:700;color:#1c2b1c;margin-top:6px;">{job_title}</div>
-      <div style="font-size:13px;color:#8aaa95;margin-top:4px;">{len(candidates)} candidates screened and ranked by AI</div>
-    </div>
-    <div style="padding:24px 40px 32px;">
-      <table style="width:100%;border-collapse:collapse;background:#faf7f2;border-radius:12px;overflow:hidden;">
-        <thead><tr style="background:#f3ede3;">
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">#</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;text-align:left;">Candidate</th>
-          <th style="padding:12px;font-size:11px;color:#8aaa95;text-transform:uppercase;">Score</th>
-        </tr></thead>
-        <tbody>{rows}</tbody>
-      </table>
-    </div>
-    <div style="background:#f3ede3;padding:20px 40px;text-align:center;">
-      <div style="font-size:12px;color:#8aaa95;">
-        Generated by <a href="https://talentmesh.nimbus-24.com" style="color:#2d7a4f;">TalentMesh</a>
-        · AI-powered recruitment screening · See attached PDF for full report
-      </div>
+    # ── Interview questions per candidate ──
+    questions_html = ""
+    if questions_by_candidate:
+        questions_html += """
+        <div style="margin-top:40px;">
+          <h2 style="color:#1a2e1a;font-size:18px;border-bottom:2px solid #2d7a4f;padding-bottom:8px;">
+            📋 Interview Questions &amp; Likely Answers
+          </h2>
+          <p style="color:#555;font-size:14px;margin-bottom:24px;">
+            These questions are tailored to each candidate's profile. For each question you'll find
+            three likely answer types to help you judge the response — even if you're not technical.
+            Use the PDF report for full candidate profiles and scores.
+          </p>"""
+
+        for candidate_id, data in questions_by_candidate.items():
+            cname    = data.get("candidate_name", "Candidate")
+            cscore   = data.get("match_score", 0)
+            crank    = data.get("rank", "—")
+            qs       = data.get("questions", [])
+            if not qs:
+                continue
+
+            score_color = "#2d7a4f" if cscore >= 70 else "#d97706" if cscore >= 45 else "#c0392b"
+
+            questions_html += f"""
+          <div style="background:#f9fbf9;border:1px solid #ddd5c4;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+              <span style="font-size:16px;font-weight:700;color:#1a2e1a;">#{crank} {cname}</span>
+              <span style="background:{score_color}20;color:{score_color};border:1px solid {score_color}40;
+                           padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">
+                {cscore}% Match
+              </span>
+            </div>"""
+
+            for q in qs:
+                num      = q.get("number", "")
+                category = q.get("category", "")
+                question = q.get("question", "")
+                why      = q.get("why_we_ask", "")
+                followup = q.get("follow_up", "")
+                answers  = q.get("likely_answers", [])
+
+                quality_colors = {
+                    "Strong":     ("#2d7a4f", "#edf7f1"),
+                    "Acceptable": ("#d97706", "#fffbeb"),
+                    "Weak":       ("#c0392b", "#fdf0ee"),
+                }
+
+                answers_html = ""
+                for a in answers:
+                    quality  = a.get("quality", "")
+                    answer   = a.get("answer", "")
+                    signal   = a.get("what_it_signals", "")
+                    fc, bg   = quality_colors.get(quality, ("#555", "#f5f5f5"))
+                    answers_html += f"""
+                <div style="background:{bg};border-left:3px solid {fc};border-radius:6px;padding:10px 14px;margin-bottom:8px;">
+                  <span style="font-size:11px;font-weight:700;color:{fc};text-transform:uppercase;letter-spacing:0.5px;">
+                    {quality} Answer
+                  </span>
+                  <p style="margin:6px 0 4px;color:#1a1a1a;font-size:13px;font-style:italic;">"{answer}"</p>
+                  <p style="margin:0;color:#666;font-size:12px;">→ {signal}</p>
+                </div>"""
+
+                questions_html += f"""
+            <div style="margin-bottom:22px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="background:#1a2e1a;color:white;width:22px;height:22px;border-radius:50%;
+                             display:inline-flex;align-items:center;justify-content:center;
+                             font-size:11px;font-weight:700;flex-shrink:0;">{num}</span>
+                <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;">{category}</span>
+              </div>
+              <p style="font-size:15px;font-weight:600;color:#1a2e1a;margin:0 0 6px 30px;">{question}</p>
+              <p style="font-size:12px;color:#5a7a5a;background:#f0f4f0;border-radius:6px;
+                        padding:8px 12px;margin:0 0 10px 30px;">
+                💡 <strong>Why we ask:</strong> {why}
+              </p>
+              <div style="margin-left:30px;">
+                {answers_html}
+              </div>
+              <p style="font-size:12px;color:#888;margin:8px 0 0 30px;">
+                🔁 <strong>Follow-up if vague:</strong> {followup}
+              </p>
+              <div style="margin:10px 0 0 30px;background:white;border:1px dashed #ccc;
+                          border-radius:6px;padding:10px 12px;">
+                <p style="margin:0;font-size:12px;color:#aaa;font-style:italic;">
+                  📝 HR notes: record candidate's actual answer here before forwarding to hiring manager
+                </p>
+              </div>
+            </div>"""
+
+            questions_html += "</div>"  # end candidate block
+
+        questions_html += "</div>"  # end questions section
+
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:860px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff;">
+
+  <!-- Header -->
+  <div style="background:#1a2e1a;padding:28px 32px;border-radius:12px;margin-bottom:28px;">
+    <div style="font-size:22px;font-weight:700;color:#68d391;margin-bottom:4px;">TalentMesh</div>
+    <div style="font-size:18px;font-weight:600;color:white;">Screening Report: {job.title}</div>
+    <div style="font-size:13px;color:#a0c0a0;margin-top:4px;">
+      {len(candidates)} candidates ranked · Report attached as PDF
     </div>
   </div>
-</body></html>"""
 
+  <!-- Intro -->
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:20px;">
+    Hi,<br><br>
+    Your TalentMesh screening is complete. The full ranked report is <strong>attached as a PDF</strong>
+    to this email — open it to see all candidate scores, justifications, and profile links.<br><br>
+    Below is a quick summary of the top candidates, followed by tailored interview questions
+    with likely answer examples to help you conduct an effective initial screening call.
+  </p>
 
-async def send_report_email(to_email: str, job_title: str, candidates: List[dict]) -> bool:
-    """
-    Send screening report via Resend API with a real PDF attachment.
-    """
-    if not settings.RESEND_API_KEY:
-        raise ValueError(
-            "RESEND_API_KEY not set. Add it in Render → Environment. "
-            "Get a free key at resend.com."
-        )
+  <!-- Summary table -->
+  <h2 style="font-size:16px;color:#1a2e1a;border-bottom:2px solid #2d7a4f;padding-bottom:8px;margin-bottom:0;">
+    Top Candidates Summary
+  </h2>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;background:#faf7f2;border-radius:8px;overflow:hidden;">
+    <thead>
+      <tr style="background:#edf7f1;font-size:12px;color:#4a6355;text-transform:uppercase;letter-spacing:0.5px;">
+        <th style="padding:10px 14px;text-align:left;">Rank</th>
+        <th style="padding:10px 14px;text-align:left;">Name</th>
+        <th style="padding:10px 14px;text-align:left;">Email</th>
+        <th style="padding:10px 14px;text-align:center;">Match</th>
+      </tr>
+    </thead>
+    <tbody>{summary_rows}</tbody>
+  </table>
+  <p style="font-size:12px;color:#888;margin-bottom:32px;">Full report with justifications, skills and profile links is in the attached PDF.</p>
 
-    # Generate real PDF
-    try:
-        from app.services.pdf_generator import generate_pdf_report
-        pdf_bytes = generate_pdf_report(job_title, to_email, candidates)
-        pdf_b64   = base64.b64encode(pdf_bytes).decode("utf-8")
-        attachment = {
-            "filename":     f"TalentMesh_{job_title.replace(' ', '_')}_Report.pdf",
-            "content":      pdf_b64,
-            "content_type": "application/pdf",
-        }
-    except Exception as e:
-        print(f"[Email] PDF generation failed: {e}, sending without attachment")
-        attachment = None
+  {questions_html}
 
-    html_body  = build_email_html(job_title, candidates)
-    plain_body = f"TalentMesh Screening Report — {job_title}\n\n"
-    for c in candidates:
-        plain_body += f"#{c.get('rank')} {c.get('name') or c.get('full_name')} — {c.get('match_score')}%\n"
-    plain_body += f"\nView full results at: https://talentmesh.nimbus-24.com"
+  <!-- Footer -->
+  <div style="margin-top:40px;padding:16px 20px;background:#f0f4f0;border-radius:8px;
+              font-size:12px;color:#888;text-align:center;">
+    Powered by TalentMesh AI &nbsp;·&nbsp;
+    CV data is permanently deleted when you mark the position as filled.<br>
+    If not marked, data auto-deletes after 30 days.
+  </div>
 
-    payload = {
-        "from":    "TalentMesh <onboarding@resend.dev>",
-        "to":      [to_email],
-        "subject": f"TalentMesh Report: {job_title} — {len(candidates)} Candidates Ranked",
-        "html":    html_body,
-        "text":    plain_body,
-    }
-    if attachment:
-        payload["attachments"] = [attachment]
-
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            "https://api.resend.com/emails",
-            headers={
-                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
-                "Content-Type":  "application/json",
-            },
-            json=payload,
-        )
-
-    if response.status_code not in (200, 201):
-        error = response.json() if response.content else response.status_code
-        raise Exception(f"Resend API error: {error}")
-
-    print(f"[Email] Sent via Resend to {to_email} — job: {job_title}")
-    return True
+</body>
+</html>"""
