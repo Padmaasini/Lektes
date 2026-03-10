@@ -2983,41 +2983,58 @@ function apiHeaders() {
   } catch(e) { /* config endpoint unreachable — open mode */ }
 })();
 
+// ── SERVER WAKE-UP UTILITY ────────────────────────────────────────────────
+// Render free tier sleeps after 15 min idle. This pings /health and waits
+// up to 75 seconds for it to respond before proceeding with sensitive actions.
+async function wakeServer(statusCallback) {
+  const MAX_WAIT_MS  = 75000;
+  const POLL_MS      = 4000;
+  const start        = Date.now();
+
+  while (Date.now() - start < MAX_WAIT_MS) {
+    try {
+      const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) return true;   // server is up
+    } catch(_) { /* sleeping — keep polling */ }
+
+    const elapsed = Math.round((Date.now() - start) / 1000);
+    if (statusCallback) statusCallback(elapsed);
+    await new Promise(r => setTimeout(r, POLL_MS));
+  }
+  return false;   // timed out
+}
+
 async function emailReport() {
   const btns = document.querySelectorAll('.btn-email');
   const btn  = btns[btns.length - 1];
-  btn.disabled = true; btn.textContent = 'Generating questions & sending…';
+  btn.disabled = true; btn.textContent = 'Checking server…';
 
-  const MAX_RETRIES = 3;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      if (attempt > 1) {
-        btn.textContent = `Retrying… (${attempt}/${MAX_RETRIES})`;
-        await new Promise(r => setTimeout(r, 4000));
-      }
-      const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, {
-        method: 'POST',
-        headers: apiHeaders(),
-        signal: AbortSignal.timeout(60000)    // 60 s — question generation takes time
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.detail || `Error ${res.status}`);
-      }
-      toast('Report + interview questions emailed to HR! 📧', 'success');
-      btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
-      return;
-    } catch(e) {
-      const isNetworkErr = e.message === 'Failed to fetch' || e.name === 'TimeoutError';
-      if (attempt === MAX_RETRIES) {
-        const hint = isNetworkErr
-          ? 'The server may be waking up — wait 30 seconds and try again.'
-          : e.message;
-        toast(`Email failed: ${hint}`, 'error');
-        btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
-      }
-    }
+  // Wake server first — question generation takes ~30s and server must be fully up
+  const awake = await wakeServer(elapsed => {
+    btn.textContent = `Server waking up… ${elapsed}s`;
+  });
+  if (!awake) {
+    toast('Server did not respond after 75 seconds. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
+    return;
   }
+
+  btn.textContent = 'Generating questions & sending…';
+  try {
+    const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, {
+      method: 'POST',
+      headers: apiHeaders(),
+      signal: AbortSignal.timeout(90000)    // 90 s — LLM question generation takes time
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    toast('Report + interview questions emailed to HR! 📧', 'success');
+  } catch(e) {
+    toast(`Email failed: ${e.message}`, 'error');
+  }
+  btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
 }
 
 // ── INTERVIEW QUESTIONS ───────────────────────────────────────────────────
@@ -3083,8 +3100,16 @@ function renderQBlock(candidateId, data) {
   if (!body) return;
 
   const qualityClass = { 'Strong': 'strong', 'Acceptable': 'acceptable', 'Weak': 'weak' };
+  const questions = data.questions || [];
 
-  const questionsHtml = (data.questions || []).map(q => {
+  if (!questions.length) {
+    body.innerHTML = `<div style="padding:20px;color:#888;font-size:13px;text-align:center;">
+      ⚠️ Could not generate questions for this candidate. Try clicking the button again.
+    </div>`;
+    return;
+  }
+
+  const questionsHtml = questions.map(q => {
     const answersHtml = (q.likely_answers || []).map(a => `
       <div class="q-answer ${qualityClass[a.quality] || ''}">
         <div class="q-answer-label">${a.quality} Answer</div>
@@ -3127,45 +3152,41 @@ async function markPositionFilled() {
 
   const btn = document.getElementById('btnFilled');
   btn.disabled = true;
+  btn.textContent = 'Checking server…';
+
+  // Step 1: ensure server is awake before sending the delete
+  const awake = await wakeServer(elapsed => {
+    btn.textContent = `Server waking up… ${elapsed}s`;
+  });
+
+  if (!awake) {
+    toast('Server did not respond after 75 seconds. Please try again in a moment.', 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ Position Filled';
+    return;
+  }
+
+  // Step 2: now delete
   btn.textContent = 'Deleting CV data…';
-
-  // Retry up to 3 times — Render free tier may need a moment to wake up
-  const MAX_RETRIES = 3;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      if (attempt > 1) {
-        btn.textContent = `Retrying… (attempt ${attempt}/${MAX_RETRIES})`;
-        await new Promise(r => setTimeout(r, 3000));
-      }
-
-      const res = await fetch(`${API}/api/v1/jobs/${S.jobId}`, {
-        method: 'DELETE',
-        headers: apiHeaders(),
-        signal: AbortSignal.timeout(15000)   // 15 s timeout per attempt
-      });
-
-      if (res.ok || res.status === 204) {
-        toast('✅ Position marked as filled. All CV data permanently deleted.', 'success');
-        setTimeout(() => {
-          S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
-          goToLanding();
-        }, 2500);
-        return;   // success — exit
-      }
+  try {
+    const res = await fetch(`${API}/api/v1/jobs/${S.jobId}`, {
+      method: 'DELETE',
+      headers: apiHeaders(),
+      signal: AbortSignal.timeout(20000)
+    });
+    if (res.ok || res.status === 204) {
+      toast('✅ Position marked as filled. All CV data permanently deleted.', 'success');
+      setTimeout(() => {
+        S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
+        goToLanding();
+      }, 2500);
+    } else {
       throw new Error(`Server returned ${res.status}`);
-
-    } catch(e) {
-      const isNetworkErr = e.message === 'Failed to fetch' || e.name === 'TimeoutError';
-      if (attempt === MAX_RETRIES) {
-        const hint = isNetworkErr
-          ? 'The server may be waking up — wait 30 seconds and try again.'
-          : e.message;
-        toast(`Could not delete CV data: ${hint}`, 'error');
-        btn.disabled = false;
-        btn.textContent = '✅ Position Filled';
-      }
-      // else loop retries
     }
+  } catch(e) {
+    toast(`Could not delete CV data: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = '✅ Position Filled';
   }
 }
 function downloadReport() {

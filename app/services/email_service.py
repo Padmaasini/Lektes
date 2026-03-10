@@ -91,7 +91,7 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
 
     # ── Interview questions per candidate ──
     questions_html = ""
-    if questions_by_candidate:
+    if questions_by_candidate is not None and len(questions_by_candidate) > 0:
         questions_html += """
         <div style="margin-top:40px;">
           <h2 style="color:#1a2e1a;font-size:18px;border-bottom:2px solid #2d7a4f;padding-bottom:8px;">
