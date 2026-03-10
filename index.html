@@ -2987,17 +2987,36 @@ async function emailReport() {
   const btns = document.querySelectorAll('.btn-email');
   const btn  = btns[btns.length - 1];
   btn.disabled = true; btn.textContent = 'Generating questions & sending…';
-  try {
-    const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, { method:'POST', headers: apiHeaders() });
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.detail || `Error ${res.status}`);
+
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 1) {
+        btn.textContent = `Retrying… (${attempt}/${MAX_RETRIES})`;
+        await new Promise(r => setTimeout(r, 4000));
+      }
+      const res = await fetch(`${API}/api/v1/reports/${S.jobId}/send`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        signal: AbortSignal.timeout(60000)    // 60 s — question generation takes time
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.detail || `Error ${res.status}`);
+      }
+      toast('Report + interview questions emailed to HR! 📧', 'success');
+      btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
+      return;
+    } catch(e) {
+      const isNetworkErr = e.message === 'Failed to fetch' || e.name === 'TimeoutError';
+      if (attempt === MAX_RETRIES) {
+        const hint = isNetworkErr
+          ? 'The server may be waking up — wait 30 seconds and try again.'
+          : e.message;
+        toast(`Email failed: ${hint}`, 'error');
+        btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
+      }
     }
-    toast('Report + interview questions emailed to HR! 📧', 'success');
-  } catch(e) {
-    toast(`Email failed: ${e.message}`, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = '📧 Email Report + Questions to HR';
   }
 }
 
@@ -3099,7 +3118,6 @@ function renderQBlock(candidateId, data) {
 async function markPositionFilled() {
   if (!S.jobId) return;
 
-  // Confirmation dialog
   const confirmed = window.confirm(
     '✅ Mark this position as filled?\n\n' +
     'This will permanently delete all candidate CV data for this role immediately.\n\n' +
@@ -3111,29 +3129,43 @@ async function markPositionFilled() {
   btn.disabled = true;
   btn.textContent = 'Deleting CV data…';
 
-  try {
-    // Delete the entire job — cascades to all candidates and their CV files
-    const res = await fetch(`${API}/api/v1/jobs/${S.jobId}`, {
-      method: 'DELETE',
-      headers: apiHeaders()
-    });
+  // Retry up to 3 times — Render free tier may need a moment to wake up
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 1) {
+        btn.textContent = `Retrying… (attempt ${attempt}/${MAX_RETRIES})`;
+        await new Promise(r => setTimeout(r, 3000));
+      }
 
-    if (!res.ok && res.status !== 204) {
-      throw new Error(`Delete failed (${res.status})`);
+      const res = await fetch(`${API}/api/v1/jobs/${S.jobId}`, {
+        method: 'DELETE',
+        headers: apiHeaders(),
+        signal: AbortSignal.timeout(15000)   // 15 s timeout per attempt
+      });
+
+      if (res.ok || res.status === 204) {
+        toast('✅ Position marked as filled. All CV data permanently deleted.', 'success');
+        setTimeout(() => {
+          S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
+          goToLanding();
+        }, 2500);
+        return;   // success — exit
+      }
+      throw new Error(`Server returned ${res.status}`);
+
+    } catch(e) {
+      const isNetworkErr = e.message === 'Failed to fetch' || e.name === 'TimeoutError';
+      if (attempt === MAX_RETRIES) {
+        const hint = isNetworkErr
+          ? 'The server may be waking up — wait 30 seconds and try again.'
+          : e.message;
+        toast(`Could not delete CV data: ${hint}`, 'error');
+        btn.disabled = false;
+        btn.textContent = '✅ Position Filled';
+      }
+      // else loop retries
     }
-
-    toast('✅ Position marked as filled. All CV data permanently deleted.', 'success');
-
-    // Short pause so the toast is readable, then go to landing
-    setTimeout(() => {
-      S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
-      goToLanding();
-    }, 2500);
-
-  } catch(e) {
-    toast(`Could not delete CV data: ${e.message}`, 'error');
-    btn.disabled = false;
-    btn.textContent = '✅ Position Filled';
   }
 }
 function downloadReport() {

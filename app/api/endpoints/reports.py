@@ -4,18 +4,41 @@ from app.core.database import get_db
 from app.models.job import Job
 from app.models.candidate import Candidate
 from app.models.screening import Screening
+import re as _re
 
 router = APIRouter()
 
 
-def _candidate_list(job_id: str, db: Session, limit: int = 10):
-    return (
+def _display_name(candidate) -> str:
+    """
+    Return a human-readable display name for a candidate.
+    Falls back to email-derived name if full_name is null or UUID-like.
+    """
+    name = candidate.full_name
+    # Reject UUID-like strings (hex chars and spaces/dashes)
+    if name:
+        if _re.match(r'^[0-9a-fA-F]{4,}[\s\-]', name.strip()):
+            name = None
+        elif _re.search(r'\d{4,}', name):
+            name = None
+    if not name and candidate.email:
+        local = candidate.email.split('@')[0]
+        parts = _re.split(r'[._\-]', local)
+        parts = [p for p in parts if not p.isdigit() and len(p) > 1]
+        if parts:
+            name = ' '.join(p.capitalize() for p in parts)
+    return name or 'Unknown'
+
+
+def _candidate_list(job_id: str, db: Session, limit: int = None):
+    q = (
         db.query(Candidate)
         .filter(Candidate.job_id == job_id, Candidate.match_score != None)
         .order_by(Candidate.match_score.desc())
-        .limit(limit)
-        .all()
     )
+    if limit:
+        q = q.limit(limit)
+    return q.all()
 
 
 @router.get("/{job_id}")
@@ -41,7 +64,7 @@ async def get_report(job_id: str, db: Session = Depends(get_db)):
             {
                 "rank":             idx + 1,
                 "candidate_id":     c.id,
-                "name":             c.full_name,
+                "name":             _display_name(c),
                 "email":            c.email,
                 "match_score":      round(c.match_score, 1),
                 "match_percentage": f"{round(c.match_score, 1)}%",
@@ -74,13 +97,8 @@ async def send_report(job_id: str, db: Session = Depends(get_db)):
 
     # ── Step 1: Generate PDF ──────────────────────────────────────────────
     try:
-        import sys, os
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__))
-        ))))
-        from pdf_generator import generate_pdf_report
+        from app.services.pdf_generator import generate_pdf_report
     except ImportError:
-        # Fallback: look for report_generator in services
         try:
             from app.services.report_generator import generate_pdf_report
         except ImportError:
@@ -89,7 +107,7 @@ async def send_report(job_id: str, db: Session = Depends(get_db)):
     candidate_dicts = [
         {
             "rank":             idx + 1,
-            "name":             c.full_name,
+            "name":             _display_name(c),
             "email":            c.email,
             "match_score":      round(c.match_score or 0, 1),
             "skills":           c.skills,
@@ -117,14 +135,14 @@ async def send_report(job_id: str, db: Session = Depends(get_db)):
         try:
             qs = await generate_interview_questions(job, c)
             questions_by_candidate[c.id] = {
-                "candidate_name": c.full_name,
+                "candidate_name": _display_name(c),
                 "match_score":    round(c.match_score or 0, 1),
                 "rank":           idx + 1,
                 "questions":      qs,
             }
-            print(f"  ✓ Questions generated for {c.full_name}")
+            print(f"  ✓ Questions generated for {_display_name(c)}")
         except Exception as e:
-            print(f"  ✗ Questions failed for {c.full_name}: {e}")
+            print(f"  ✗ Questions failed for {_display_name(c)}: {e}")
 
     # ── Step 3: Send email with PDF attachment + questions ────────────────
     from app.services.email_service import send_report_email
@@ -167,7 +185,7 @@ async def generate_screening_questions(
 
     return {
         "candidate_id":   candidate_id,
-        "candidate_name": candidate.full_name,
+        "candidate_name": _display_name(candidate),
         "job_title":      job.title,
         "match_score":    round(candidate.match_score or 0, 1),
         "questions":      questions,
