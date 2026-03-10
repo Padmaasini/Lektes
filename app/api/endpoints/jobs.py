@@ -48,6 +48,11 @@ Return this exact JSON structure (no markdown, no explanation):
 Rules:
 - min_experience_years: the minimum years of experience required (0 if entry-level or not stated)
 - max_experience_years: the maximum years required (0 if no upper limit stated)
+- If no explicit years are given, infer from language:
+    "highly skilled", "experienced", "senior", "lead", "principal" → min 4, max 0
+    "mid-level", "intermediate" → min 2, max 5
+    "junior", "associate", "graduate", "entry-level", "fresher" → min 0, max 2
+    If none of these, default to min 0, max 0
 - required_skills: only hard technical skills (e.g. Python, SQL, Azure) — not soft skills
 - nice_to_have_skills: skills listed as preferred, bonus, or nice to have
 - description: keep it concise and factual, based only on the posting

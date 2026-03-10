@@ -104,8 +104,7 @@ async def stage_score_candidates(job, candidates) -> List[dict]:
 
     for candidate in candidates:
         try:
-            prompt = f"""
-You are an expert recruiter screening candidates for the following job.
+            prompt = f"""You are an expert recruiter screening candidates for the following job.
 
 JOB TITLE: {job.title}
 JOB DESCRIPTION: {job.description}
@@ -122,21 +121,33 @@ Experience: {candidate.experience_years} years
 Education: {candidate.education}
 Work History: {candidate.work_history}
 
-Score this candidate from 0 to 100 based on:
-- Skills match with required skills (40%)
-- Experience fit — penalise heavily if outside required range (30%)
-- Education relevance (15%)
-- Overall profile quality (15%)
+SCORING RULES:
 
-If experience is outside the required range, you MUST flag it in red_flags.
+1. SKILLS — recognise transferable skills (40% of score):
+   - If a candidate has a closely related tool/technology, do NOT treat it as a hard miss.
+     Examples of transferable pairs: Power BI <-> Tableau <-> Looker <-> Microsoft Fabric (BI tools),
+     MySQL <-> PostgreSQL <-> SQL Server (SQL dialects), TensorFlow <-> PyTorch (ML frameworks),
+     AWS <-> Azure <-> GCP (cloud), React <-> Vue <-> Angular (JS frameworks).
+   - For transferable skills: give partial credit and note "gap bridgeable" in the justification.
+   - Only treat a skill as fully missing if there is NO related experience whatsoever.
+
+2. EXPERIENCE FIT (30% of score):
+   - Follow the experience rule above strictly.
+   - If the job description uses language like "highly skilled", "experienced", "senior" without
+     stating a number, treat it as implying 3-5 years minimum experience for the role.
+   - If it says "junior", "entry-level", "graduate", "fresher" without a number, treat as 0-2 years.
+
+3. EDUCATION (15% of score): relevance of degree field and level to the role.
+
+4. OVERALL PROFILE QUALITY (15%): completeness, work history relevance, professional presence.
 
 Return ONLY this JSON, no markdown, no explanation:
 {{
     "match_score": 0-100,
-    "justification": "2-3 sentence explanation including experience assessment",
-    "red_flags": "mention if experience is too low, too high, or null if experience fits perfectly",
-    "skills_matched": "comma-separated required skills the candidate has",
-    "skills_missing": "comma-separated required skills the candidate lacks"
+    "justification": "2-3 sentences covering skills match including transferable ones, experience fit, and education",
+    "red_flags": "describe experience mismatch if any, or mention critical missing skills with no transferable equivalent — use null if no concerns",
+    "skills_matched": "comma-separated required skills the candidate has (including transferable equivalents)",
+    "skills_missing": "comma-separated required skills the candidate truly lacks (no transferable equivalent found)"
 }}
 """
 
@@ -154,19 +165,27 @@ Return ONLY this JSON, no markdown, no explanation:
             exp_flag = None
 
             if max_exp > 0 and cand_exp > max_exp:
-                # Overqualified
                 overshoot = cand_exp - max_exp
-                exp_penalty = min(35, overshoot * 7)
-                exp_flag = f"Overqualified: {cand_exp} yrs experience exceeds the {min_exp}–{max_exp} yr requirement."
+                if overshoot <= 2:
+                    # Soft zone: 1-2 years over — orange warning, light penalty
+                    exp_penalty = overshoot * 4   # max 8 pts
+                    exp_flag = f"SOFT_OVER:{cand_exp} yrs is {overshoot} yr(s) above the {min_exp}–{max_exp} yr range — slightly more experience than required."
+                else:
+                    # Hard zone: 3+ years over — red flag, full penalty
+                    exp_penalty = min(35, 8 + (overshoot - 2) * 7)
+                    exp_flag = f"Overqualified: {cand_exp} yrs experience significantly exceeds the {min_exp}–{max_exp} yr requirement."
             elif min_exp > 0 and cand_exp < min_exp:
-                # Under-experienced
                 shortfall = min_exp - cand_exp
                 exp_penalty = min(35, shortfall * 8)
-                exp_flag = f"Under-experienced: {cand_exp} yrs experience is below the {min_exp} yr minimum."
+                exp_flag = f"Under-experienced: {cand_exp} yrs is below the {min_exp} yr minimum."
             elif min_exp == 0 and max_exp == 0 and cand_exp >= 3:
-                # Fresher role — anyone with 3+ years is overqualified
-                exp_penalty = min(25, (cand_exp - 2) * 6)
-                exp_flag = f"Overqualified for fresher role: {cand_exp} yrs experience."
+                overshoot = cand_exp - 2
+                if overshoot <= 2:
+                    exp_penalty = overshoot * 4
+                    exp_flag = f"SOFT_OVER:{cand_exp} yrs — slightly more experience than typical for a fresher role."
+                else:
+                    exp_penalty = min(25, 8 + (overshoot - 2) * 5)
+                    exp_flag = f"Overqualified for fresher role: {cand_exp} yrs experience significantly exceeds entry-level expectations."
 
             final_score = max(0, min(100, raw_score - exp_penalty))
 
