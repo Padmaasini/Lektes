@@ -40,11 +40,24 @@ async def get_job(job_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
     return job
 
+import os as _os
+
 @router.delete("/{job_id}", status_code=204)
 async def delete_job(job_id: str, db: Session = Depends(get_db)):
-    """Delete a job and all associated candidates."""
+    """Delete a job and all associated candidates and CV files."""
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    db.delete(job)
+
+    # Delete CV files from disk before ORM cascade
+    from app.models.candidate import Candidate
+    candidates = db.query(Candidate).filter(Candidate.job_id == job_id).all()
+    for c in candidates:
+        if c.cv_file_path and _os.path.exists(c.cv_file_path):
+            try:
+                _os.remove(c.cv_file_path)
+            except OSError:
+                pass
+
+    db.delete(job)   # cascade="all, delete-orphan" removes candidates + screenings
     db.commit()

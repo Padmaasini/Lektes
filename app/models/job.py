@@ -20,8 +20,8 @@ class Job(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    candidates = relationship("Candidate", back_populates="job")
-    screenings = relationship("Screening", back_populates="job")
+    candidates = relationship("Candidate", back_populates="job", cascade="all, delete-orphan")
+    screenings = relationship("Screening", back_populates="job", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Job {self.title}>"

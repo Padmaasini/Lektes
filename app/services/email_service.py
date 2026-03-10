@@ -92,37 +92,19 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
     # ── Interview questions per candidate ──
     questions_html = ""
     if questions_by_candidate is not None and len(questions_by_candidate) > 0:
-        questions_html += """
-        <div style="margin-top:40px;">
-          <h2 style="color:#1a2e1a;font-size:18px;border-bottom:2px solid #2d7a4f;padding-bottom:8px;">
-            📋 Interview Questions &amp; Likely Answers
-          </h2>
-          <p style="color:#555;font-size:14px;margin-bottom:24px;">
-            These questions are tailored to each candidate's profile. For each question you'll find
-            three likely answer types to help you judge the response — even if you're not technical.
-            Use the PDF report for full candidate profiles and scores.
-          </p>"""
+        # Use the first (highest-ranked) candidate's questions as the single question set.
+        # Questions are role-level and consistent across candidates.
+        first_data = next(iter(questions_by_candidate.values()))
+        qs = first_data.get("questions", [])
 
-        for candidate_id, data in questions_by_candidate.items():
-            cname    = data.get("candidate_name", "Candidate")
-            cscore   = data.get("match_score", 0)
-            crank    = data.get("rank", "—")
-            qs       = data.get("questions", [])
-            if not qs:
-                continue
+        if qs:
+            quality_colors = {
+                "Strong":     ("#2d7a4f", "#edf7f1"),
+                "Acceptable": ("#d97706", "#fffbeb"),
+                "Weak":       ("#c0392b", "#fdf0ee"),
+            }
 
-            score_color = "#2d7a4f" if cscore >= 70 else "#d97706" if cscore >= 45 else "#c0392b"
-
-            questions_html += f"""
-          <div style="background:#f9fbf9;border:1px solid #ddd5c4;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-              <span style="font-size:16px;font-weight:700;color:#1a2e1a;">#{crank} {cname}</span>
-              <span style="background:{score_color}20;color:{score_color};border:1px solid {score_color}40;
-                           padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">
-                {cscore}% Match
-              </span>
-            </div>"""
-
+            questions_items = ""
             for q in qs:
                 num      = q.get("number", "")
                 category = q.get("category", "")
@@ -131,18 +113,12 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
                 followup = q.get("follow_up", "")
                 answers  = q.get("likely_answers", [])
 
-                quality_colors = {
-                    "Strong":     ("#2d7a4f", "#edf7f1"),
-                    "Acceptable": ("#d97706", "#fffbeb"),
-                    "Weak":       ("#c0392b", "#fdf0ee"),
-                }
-
                 answers_html = ""
                 for a in answers:
-                    quality  = a.get("quality", "")
-                    answer   = a.get("answer", "")
-                    signal   = a.get("what_it_signals", "")
-                    fc, bg   = quality_colors.get(quality, ("#555", "#f5f5f5"))
+                    quality = a.get("quality", "")
+                    answer  = a.get("answer", "")
+                    signal  = a.get("what_it_signals", "")
+                    fc, bg  = quality_colors.get(quality, ("#555", "#f5f5f5"))
                     answers_html += f"""
                 <div style="background:{bg};border-left:3px solid {fc};border-radius:6px;padding:10px 14px;margin-bottom:8px;">
                   <span style="font-size:11px;font-weight:700;color:{fc};text-transform:uppercase;letter-spacing:0.5px;">
@@ -152,36 +128,46 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
                   <p style="margin:0;color:#666;font-size:12px;">→ {signal}</p>
                 </div>"""
 
-                questions_html += f"""
-            <div style="margin-bottom:22px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <span style="background:#1a2e1a;color:white;width:22px;height:22px;border-radius:50%;
+                questions_items += f"""
+            <div style="margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #e8e0d4;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="background:#1a2e1a;color:white;width:24px;height:24px;border-radius:50%;
                              display:inline-flex;align-items:center;justify-content:center;
-                             font-size:11px;font-weight:700;flex-shrink:0;">{num}</span>
+                             font-size:12px;font-weight:700;flex-shrink:0;">{num}</span>
                 <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;">{category}</span>
               </div>
-              <p style="font-size:15px;font-weight:600;color:#1a2e1a;margin:0 0 6px 30px;">{question}</p>
+              <p style="font-size:15px;font-weight:600;color:#1a2e1a;margin:0 0 8px 32px;">{question}</p>
               <p style="font-size:12px;color:#5a7a5a;background:#f0f4f0;border-radius:6px;
-                        padding:8px 12px;margin:0 0 10px 30px;">
+                        padding:8px 12px;margin:0 0 10px 32px;">
                 💡 <strong>Why we ask:</strong> {why}
               </p>
-              <div style="margin-left:30px;">
-                {answers_html}
-              </div>
-              <p style="font-size:12px;color:#888;margin:8px 0 0 30px;">
+              <div style="margin-left:32px;">{answers_html}</div>
+              <p style="font-size:12px;color:#888;margin:8px 0 0 32px;">
                 🔁 <strong>Follow-up if vague:</strong> {followup}
               </p>
-              <div style="margin:10px 0 0 30px;background:white;border:1px dashed #ccc;
+              <div style="margin:10px 0 0 32px;background:white;border:1px dashed #ccc;
                           border-radius:6px;padding:10px 12px;">
                 <p style="margin:0;font-size:12px;color:#aaa;font-style:italic;">
-                  📝 HR notes: record candidate's actual answer here before forwarding to hiring manager
+                  📝 HR notes: record candidate's actual answer here
                 </p>
               </div>
             </div>"""
 
-            questions_html += "</div>"  # end candidate block
+            questions_html = f"""
+        <div style="margin-top:40px;">
+          <h2 style="color:#1a2e1a;font-size:18px;border-bottom:2px solid #2d7a4f;padding-bottom:8px;">
+            📋 Interview Questions &amp; Likely Answers
+          </h2>
+          <p style="color:#555;font-size:14px;margin-bottom:24px;">
+            Use these questions for your initial screening calls. For each question you'll find
+            three likely answer types — Strong, Acceptable, and Weak — to help you judge responses
+            even if you're not technical.
+          </p>
+          <div style="background:#f9fbf9;border:1px solid #ddd5c4;border-radius:10px;padding:24px 28px;">
+            {questions_items}
+          </div>
+        </div>"""
 
-        questions_html += "</div>"  # end questions section
 
     return f"""<!DOCTYPE html>
 <html>
