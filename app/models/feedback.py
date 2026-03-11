@@ -1,7 +1,7 @@
 """
 Feedback model — stores HR thumbs up/down on screened candidates.
 
-This is the foundation of TalentMesh's learning engine.
+This is the foundation of Lektes's learning engine.
 Every decision captured here becomes training signal for:
   - Phase 2: per-company score weight calibration
   - Phase 3: vector similarity against past successful hires

@@ -3,12 +3,12 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "TalentMesh"
+    APP_NAME: str = "Lektes"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "sqlite:///./talentmesh.db"
+    DATABASE_URL: str = "sqlite:///./lektes.db"
 
     # LLM - Groq
     GROQ_API_KEY: Optional[str] = None
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # Email - Resend (replaces Gmail SMTP — works on Render free tier)
     RESEND_API_KEY: Optional[str] = None
-    RESEND_FROM_EMAIL: str = "TalentMesh <hr@nimbus-24.com>"
+    RESEND_FROM_EMAIL: str = "Lektes <hr@nimbus-24.com>"
 
     # Email - Gmail SMTP (legacy fallback)
     GMAIL_USER: Optional[str] = None
@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
 
     # ── SECURITY ──────────────────────────────────────────────
-    # Set TM_API_KEY on Render to protect all API endpoints.
+    # Set LK_API_KEY on Render to protect all API endpoints.
     # Frontend passes this in X-API-Key header automatically.
     # Leave blank during local dev — all endpoints stay open.
-    TM_API_KEY: Optional[str] = None
+    LK_API_KEY: Optional[str] = None
 
     # ── GDPR DATA RETENTION ───────────────────────────────────
     # Candidate CV data is auto-deleted after this many days.

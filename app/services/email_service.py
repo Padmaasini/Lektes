@@ -1,5 +1,5 @@
 """
-TalentMesh Email Service — Resend API
+Lektes Email Service — Resend API
 Sends screening report as PDF attachment.
 Email body contains interview questions + likely answers per candidate.
 """
@@ -32,14 +32,14 @@ async def send_report_email(
         return False
 
     try:
-        from_email = settings.RESEND_FROM_EMAIL or "TalentMesh <noreply@talentmesh.nimbus-24.com>"
-        subject    = f"TalentMesh Report: {job.title} — {len(candidates)} Candidates Ranked"
+        from_email = settings.RESEND_FROM_EMAIL or "Lektes <noreply@lektes.nimbus-24.com>"
+        subject    = f"Lektes Report: {job.title} — {len(candidates)} Candidates Ranked"
 
         html_body  = build_email_html(job, candidates, questions_by_candidate)
 
         # Encode PDF as base64 for attachment
         pdf_b64    = base64.b64encode(pdf_bytes).decode("utf-8")
-        filename   = f"TalentMesh_{job.title.replace(' ', '_')}_Report.pdf"
+        filename   = f"Lektes_{job.title.replace(' ', '_')}_Report.pdf"
 
         params = {
             "from":    from_email,
@@ -176,7 +176,7 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
 
   <!-- Header -->
   <div style="background:#1a2e1a;padding:28px 32px;border-radius:12px;margin-bottom:28px;">
-    <div style="font-size:22px;font-weight:700;color:#68d391;margin-bottom:4px;">TalentMesh</div>
+    <div style="font-size:22px;font-weight:700;color:#68d391;margin-bottom:4px;">Lektes</div>
     <div style="font-size:18px;font-weight:600;color:white;">Screening Report: {job.title}</div>
     <div style="font-size:13px;color:#a0c0a0;margin-top:4px;">
       {len(candidates)} candidates ranked · Report attached as PDF
@@ -186,7 +186,7 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
   <!-- Intro -->
   <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:20px;">
     Hi,<br><br>
-    Your TalentMesh screening is complete. The full ranked report is <strong>attached as a PDF</strong>
+    Your Lektes screening is complete. The full ranked report is <strong>attached as a PDF</strong>
     to this email — open it to see all candidate scores, justifications, and profile links.<br><br>
     Below is a quick summary of the top candidates, followed by tailored interview questions
     with likely answer examples to help you conduct an effective initial screening call.
@@ -214,7 +214,7 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
   <!-- Footer -->
   <div style="margin-top:40px;padding:16px 20px;background:#f0f4f0;border-radius:8px;
               font-size:12px;color:#888;text-align:center;">
-    Powered by TalentMesh AI &nbsp;·&nbsp;
+    Powered by Lektes AI &nbsp;·&nbsp;
     CV data is permanently deleted when you mark the position as filled.<br>
     If not marked, data auto-deletes after 30 days.
   </div>

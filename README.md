@@ -1,4 +1,4 @@
-# 🎯 TalentMesh API
+# 🎯 Lektes API
 
 > AI-powered recruitment screening agent. Upload CVs, verify profiles across LinkedIn and GitHub, and receive a ranked candidate report — all via API.
 
@@ -8,8 +8,8 @@
 
 ### 1. Clone and setup
 ```bash
-git clone https://github.com/yourusername/talentmesh
-cd talentmesh
+git clone https://github.com/yourusername/lektes
+cd lektes
 pip install -r requirements.txt
 ```
 
@@ -59,7 +59,7 @@ Swagger docs at: `http://localhost:8000/docs`
 2. Go to render.com → New Web Service
 3. Connect your GitHub repo
 4. Add environment variables from `.env.example`
-5. Deploy — your API will be live at `https://talentmesh.onrender.com`
+5. Deploy — your API will be live at `https://lektes.onrender.com`
 
 ---
 

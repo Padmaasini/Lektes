@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TalentMesh — AI Recruitment Screening</title>
+<title>Lektes — AI Recruitment Screening</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231a2e1a'/><text y='72' x='50' text-anchor='middle' font-size='58' font-family='serif'>🌿</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1930,7 +1930,7 @@
       <!-- Wordmark — Fraunces, white on dark nav -->
       <text x="44" y="26" font-family="Fraunces,Georgia,serif" font-size="21" font-weight="700"
             letter-spacing="-0.4">
-        <tspan fill="#ffffff">Talent</tspan><tspan fill="#38a169">Mesh</tspan>
+        <tspan fill="#ffffff">Lek</tspan><tspan fill="#38a169">tes</tspan>
       </text>
     </svg>
   </div>
@@ -1987,7 +1987,7 @@
     <div class="feature-card">
       <div class="feature-ico">⚡</div>
       <h3>Instant Job Extraction</h3>
-      <p>Paste any job posting from LinkedIn, your company portal, or any job board. TalentMesh extracts requirements automatically in seconds.</p>
+      <p>Paste any job posting from LinkedIn, your company portal, or any job board. Lektes extracts requirements automatically in seconds.</p>
     </div>
     <div class="feature-card">
       <div class="feature-ico">📊</div>
@@ -2010,7 +2010,7 @@
       <div class="how-step">
         <div class="how-num">1</div>
         <h4>Add Job Details</h4>
-        <p>Paste a job ad or fill in the role manually. TalentMesh extracts all requirements with AI.</p>
+        <p>Paste a job ad or fill in the role manually. Lektes extracts all requirements with AI.</p>
       </div>
       <div class="how-step">
         <div class="how-num">2</div>
@@ -2034,7 +2034,7 @@
 <!-- ── FINAL CTA ────────────────────────────────────── -->
 <section class="landing-cta">
   <h2>Ready to screen smarter?</h2>
-  <p>Try TalentMesh free — no account required, no credit card, no setup. Just upload CVs and see who rises to the top.</p>
+  <p>Try Lektes free — no account required, no credit card, no setup. Just upload CVs and see who rises to the top.</p>
   <button class="btn-cta-large" onclick="launchApp()">Start Screening Now →</button>
   <span class="cta-note">Free · No signup · Results in minutes</span>
 </section>
@@ -2079,7 +2079,7 @@
         <div class="form-group">
           <label>Paste the full job posting below</label>
           <textarea class="paste-area" id="jobPasteText"
-            placeholder="Paste the job description directly from your portal, LinkedIn, or any job board…&#10;&#10;TalentMesh will automatically extract the job title, required skills, experience level, and description."></textarea>
+            placeholder="Paste the job description directly from your portal, LinkedIn, or any job board…&#10;&#10;Lektes will automatically extract the job title, required skills, experience level, and description."></textarea>
           <div class="parse-hint">💡 Works with any format — LinkedIn posts, company portals, raw text</div>
         </div>
         <div class="form-group">
@@ -2195,7 +2195,7 @@
     <div class="card">
       <div class="processing">
         <div class="processing-anim">🌿</div>
-        <h2>TalentMesh is screening...</h2>
+        <h2>Lektes is screening...</h2>
         <p>Parsing CVs, verifying profiles, and ranking candidates.</p>
 
         <div class="progress-wrap">
@@ -2289,7 +2289,7 @@
 </div><!-- end #appView -->
 
 <footer>
-  TalentMesh AI &nbsp;·&nbsp; Part of <a href="https://nimbus-24.com">Nimbus-24</a> &nbsp;·&nbsp; <a href="https://talentmesh.nimbus-24.com/docs">API Documentation</a>
+  Lektes AI &nbsp;·&nbsp; Part of <a href="https://nimbus-24.com">Nimbus-24</a> &nbsp;·&nbsp; <a href="https://lektes.nimbus-24.com/docs">API Documentation</a>
 </footer>
 
 <div class="toast" id="toast">
@@ -3012,7 +3012,7 @@ async function submitFeedback(candidateId, decision) {
 
 // ── API HEADERS (injects X-API-Key if configured) ─────────────
 function apiHeaders() {
-  if (window._TM_API_KEY) return { 'X-API-Key': window._TM_API_KEY };
+  if (window._LK_API_KEY) return { 'X-API-Key': window._LK_API_KEY };
   return {};
 }
 
@@ -3024,7 +3024,7 @@ function apiHeaders() {
       const cfg = await res.json();
       // api_key_required tells us whether to prompt — key itself comes from env
       // For the demo the key is stored in a meta tag or env var passed at build time
-      // Production: set window._TM_API_KEY via your deployment pipeline
+      // Production: set window._LK_API_KEY via your deployment pipeline
       window._TM_KEY_REQUIRED = cfg.api_key_required;
     }
   } catch(e) { /* config endpoint unreachable — open mode */ }
@@ -3264,7 +3264,7 @@ function downloadReport() {
   }).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>TalentMesh — ${jobTitle}</title>
+  <title>Lektes — ${jobTitle}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #faf7f2; }
     @media print {
@@ -3275,7 +3275,7 @@ function downloadReport() {
   </head><body>
   <div style="max-width:760px;margin:0 auto;padding:32px 24px;">
     <div style="background:#1a2e1a;padding:28px 32px;border-radius:12px;margin-bottom:24px;">
-      <div style="font-size:22px;font-weight:700;color:#fff;">🌿 TalentMesh</div>
+      <div style="font-size:22px;font-weight:700;color:#fff;">🌿 Lektes</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">AI Recruitment Screening Report · ${now}</div>
     </div>
     <div style="margin-bottom:20px;">
@@ -3294,7 +3294,7 @@ function downloadReport() {
       <tbody>${rows}</tbody>
     </table>
     <div style="margin-top:24px;text-align:center;font-size:12px;color:#8aaa95;">
-      Generated by TalentMesh · talentmesh.nimbus-24.com
+      Generated by Lektes · lektes.nimbus-24.com
     </div>
     <div class="no-print" style="margin-top:24px;text-align:center;">
       <button onclick="window.print()" style="padding:12px 32px;background:#1a2e1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🖨 Print / Save as PDF</button>

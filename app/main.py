@@ -1,5 +1,5 @@
 """
-TalentMesh API — main application entry point.
+Lektes API — main application entry point.
 
 Security: slowapi rate limiting (60 req/min per IP)
 GDPR: startup cleanup of expired candidate records
@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
 
 # ── APP ────────────────────────────────────────────────────────
 app = FastAPI(
-    title       = "TalentMesh API",
+    title       = "Lektes API",
     description = "AI-powered recruitment screening — parse CVs, verify profiles, rank candidates.",
     version     = "0.2.0",
     docs_url    = "/docs",
@@ -82,7 +82,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS ───────────────────────────────────────────────────────
 ALLOWED_ORIGINS = (
-    ["https://talentmesh.nimbus-24.com", "https://hrassist-dqb3.onrender.com"]
+    ["https://lektes.nimbus-24.com", "https://hrassist-dqb3.onrender.com"]
     if not settings.DEBUG
     else ["*"]
 )
@@ -116,7 +116,7 @@ async def frontend():
             return FileResponse(path, media_type="text/html")
     return HTMLResponse("""
     <html><body style="font-family:sans-serif;text-align:center;padding:80px;background:#faf7f2">
-        <h1 style="color:#2d7a4f">TalentMesh API is Running</h1>
+        <h1 style="color:#2d7a4f">Lektes API is Running</h1>
         <p>Frontend not found. <a href="/docs">Open API Docs →</a></p>
     </body></html>
     """, status_code=200)
@@ -127,7 +127,7 @@ async def frontend():
 async def get_config():
     """Tells frontend whether API key auth is active. Never returns the key itself."""
     return {
-        "api_key_required":  bool(settings.TM_API_KEY),
+        "api_key_required":  bool(settings.LK_API_KEY),
         "resend_configured": bool(settings.RESEND_API_KEY),
         "retention_days":    settings.DATA_RETENTION_DAYS,
         "version":           settings.APP_VERSION,

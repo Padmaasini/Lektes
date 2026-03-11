@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: talentmesh-api
+    name: lektes-api
     runtime: python
     pythonVersion: "3.11.9"
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
@@ -12,14 +12,14 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
-      - key: TM_API_KEY
+      - key: LK_API_KEY
         sync: false
       - key: GITHUB_TOKEN
         sync: false
       - key: DATA_RETENTION_DAYS
         value: "30"
       - key: DATABASE_URL
-        value: sqlite:///./talentmesh.db
+        value: sqlite:///./lektes.db
       - key: DEBUG
         value: "False"
       - key: UPLOAD_DIR

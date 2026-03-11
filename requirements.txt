@@ -1,4 +1,4 @@
-# TalentMesh API - Requirements
+# Lektes API - Requirements
 # pydantic>=2.11 pulls pydantic-core>=2.33 which has Python 3.14 wheels
 # This works on whatever Python version Render uses (3.11, 3.12, 3.13, 3.14)
 
