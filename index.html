@@ -3011,6 +3011,7 @@ async function submitFeedback(candidateId, decision) {
 }
 
 // ── API HEADERS (injects X-API-Key if configured) ─────────────
+window._LK_API_KEY = 'api_hpmU7ydsnYEd2NQiKEn3uDNzqGdIFDe7-';
 function apiHeaders() {
   if (window._LK_API_KEY) return { 'X-API-Key': window._LK_API_KEY };
   return {};
