@@ -2481,7 +2481,7 @@ async function parseJobAd() {
   try {
     const res = await fetch(`${API}/api/v1/jobs/parse`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...apiHeaders() },
       body: JSON.stringify({ raw_text: text })
     });
     if (!res.ok) {
@@ -2563,7 +2563,7 @@ async function createJob() {
   try {
     const res = await fetch(`${API}/api/v1/jobs/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...apiHeaders() },
       body: JSON.stringify(jobPayload)
     });
     if (!res.ok) throw new Error((await res.json()).detail || `Error ${res.status}`);
@@ -2612,7 +2612,7 @@ async function uploadAll() {
 // ── STEP 3: SCREEN ──
 async function runScreening() {
   try {
-    const res = await fetch(`${API}/api/v1/screen/${S.jobId}`, { method: 'POST' });
+    const res = await fetch(`${API}/api/v1/screen/${S.jobId}`, { method: 'POST', headers: apiHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
     S.screenId = data.screening_id || data.id;
@@ -2657,7 +2657,7 @@ async function pollStatus() {
     tries++;
     if (tries > 60) { clearInterval(iv); toast('Screening is taking longer than usual.', 'error'); return; }
     try {
-      const res = await fetch(`${API}/api/v1/screen/status/${S.screenId}`);
+      const res = await fetch(`${API}/api/v1/screen/status/${S.screenId}`, { headers: apiHeaders() });
       if (!res.ok) return;
       const data = await res.json();
 
@@ -2687,7 +2687,7 @@ async function pollStatus() {
 // ── STEP 4: RESULTS ──
 async function loadResults() {
   try {
-    const res = await fetch(`${API}/api/v1/reports/${S.jobId}`);
+    const res = await fetch(`${API}/api/v1/reports/${S.jobId}`, { headers: apiHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
     S.reportData = data;   // store for PDF download
@@ -3375,7 +3375,7 @@ async function loadJobs() {
   const list = document.getElementById('jobsList');
   list.innerHTML = '<div class="modal-empty">Loading...</div>';
   try {
-    const res = await fetch(`${API}/api/v1/jobs/`);
+    const res = await fetch(`${API}/api/v1/jobs/`, { headers: apiHeaders() });
     if (!res.ok) throw new Error();
     const jobs = await res.json();
     if (!jobs.length) {
@@ -3397,7 +3397,7 @@ async function loadJobs() {
 async function deleteJob(jobId, title) {
   if (!confirm(`Delete "${title}" and all its candidates?`)) return;
   try {
-    const res = await fetch(`${API}/api/v1/jobs/${jobId}`, { method: 'DELETE' });
+    const res = await fetch(`${API}/api/v1/jobs/${jobId}`, { method: 'DELETE', headers: apiHeaders() });
     if (res.status === 204 || res.ok) {
       document.getElementById(`job-row-${jobId}`)?.remove();
       toast(`Deleted "${title}"`, 'success');
@@ -3409,7 +3409,7 @@ async function deleteJob(jobId, title) {
 async function clearAllData() {
   if (!confirm('Delete ALL jobs and candidates? This cannot be undone.')) return;
   try {
-    const res = await fetch(`${API}/api/v1/jobs/`, { method: 'DELETE' });
+    const res = await fetch(`${API}/api/v1/jobs/`, { method: 'DELETE', headers: apiHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
     toast(`Cleared ${data.jobs_deleted} jobs and ${data.candidates_deleted} candidates ✓`, 'success');
