@@ -10,9 +10,10 @@ from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, KeepTogether
+    HRFlowable, KeepTogether, Flowable
 )
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+import math
 
 
 # ── Colour palette matching the UI ──────────────────────────────────────────
@@ -34,6 +35,69 @@ GOLD        = colors.HexColor('#f0c040')
 SILVER      = colors.HexColor('#cccccc')
 BRONZE      = colors.HexColor('#e8a080')
 WHITE       = colors.white
+
+
+class LektesIcon(Flowable):
+    """
+    Draws the Lektes diamond icon (Option C) directly on the canvas.
+    size: diameter of the bounding square in points.
+    on_dark: True = white dots (for dark banner), False = green diamond (for light bg)
+    """
+    def __init__(self, size=28, on_dark=True):
+        Flowable.__init__(self)
+        self.size = size
+        self.on_dark = on_dark
+        self.width  = size
+        self.height = size
+
+    def draw(self):
+        c = self.canv
+        s = self.size
+        cx, cy = s / 2, s / 2
+        r = s * 0.46          # half-diagonal of diamond
+        dot_r   = s * 0.055   # outer dots
+        centre_r= s * 0.095   # centre gold dot
+        grid    = s * 0.235   # dot grid offset
+
+        # Diamond background
+        c.saveState()
+        c.transform(1, 0, 0, 1, cx, cy)
+        c.rotate(45)
+        corner_r = s * 0.22
+        fill_col = colors.HexColor('#2d7a4f')
+        c.setFillColor(fill_col)
+        c.setStrokeColor(colors.HexColor('#38a169'))
+        c.setLineWidth(0.6)
+        w = r * 1.42
+        c.roundRect(-w/2, -w/2, w, w, corner_r, stroke=1, fill=1)
+        c.restoreState()
+
+        # Outer 8 dots (white/cream)
+        dot_color = colors.HexColor('#faf7f2')
+        c.setFillColor(dot_color)
+        c.setFillColor(colors.Color(250/255, 247/255, 242/255, alpha=0.7))
+        for dx, dy in [(-grid,-grid),(0,-grid),(grid,-grid),
+                        (-grid,0),            (grid,0),
+                        (-grid, grid),(0, grid),(grid, grid)]:
+            c.circle(cx+dx, cy+dy, dot_r, stroke=0, fill=1)
+
+        # Centre gold dot
+        c.setFillColor(colors.HexColor('#c9a96e'))
+        c.setFillColor(colors.Color(201/255, 169/255, 110/255, alpha=0.95))
+        c.circle(cx, cy, centre_r, stroke=0, fill=1)
+
+        # Connecting lines
+        c.setStrokeColor(colors.HexColor('#faf7f2'))
+        c.setStrokeColor(colors.Color(250/255, 247/255, 242/255, alpha=0.3))
+        c.setLineWidth(0.5)
+        c.line(cx-grid, cy-grid, cx+grid, cy+grid)
+        c.line(cx+grid, cy-grid, cx-grid, cy+grid)
+        c.line(cx-grid, cy,      cx+grid, cy)
+        c.line(cx,      cy-grid, cx,      cy+grid)
+
+        # Reset alpha
+        c.setFillColor(colors.black)
+        c.setStrokeColor(colors.black)
 
 
 def _score_color(score: int):
@@ -100,18 +164,29 @@ def generate_pdf_report(job_title: str, hr_email: str, candidates: List[dict]) -
     story = []
 
     # ── HEADER BANNER ─────────────────────────────────────────────────────────
+    icon_cell = Table([[LektesIcon(size=30, on_dark=True),
+                        Paragraph('<font color="#ffffff" size="14"><b>Lektes</b></font>', styles['Normal'])]],
+                      colWidths=[36, W*0.4])
+    icon_cell.setStyle(TableStyle([
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',   (0,0), (-1,-1), 0),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 4),
+        ('TOPPADDING',    (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('BACKGROUND',    (0,0), (-1,-1), DARK_GREEN),
+    ]))
     header_data = [[
-        Paragraph('<font color="#ffffff" size="14"><b>🌿 Lektes</b></font>', styles['Normal']),
+        icon_cell,
         Paragraph('<font color="#8aaa95" size="8">AI Recruitment Screening Report</font>', styles['Normal']),
     ]]
-    header_tbl = Table(header_data, colWidths=[W*0.5, W*0.5])
+    header_tbl = Table(header_data, colWidths=[W*0.55, W*0.45])
     header_tbl.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), DARK_GREEN),
         ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
         ('LEFTPADDING',(0,0), (-1,-1), 14),
         ('RIGHTPADDING',(0,0),(-1,-1), 14),
-        ('TOPPADDING', (0,0), (-1,-1), 12),
-        ('BOTTOMPADDING',(0,0),(-1,-1), 12),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 10),
         ('ALIGN',      (1,0), (1,0),   'RIGHT'),
         ('ROUNDEDCORNERS', [6,6,6,6]),
     ]))
@@ -121,7 +196,7 @@ def generate_pdf_report(job_title: str, hr_email: str, candidates: List[dict]) -
     # ── JOB TITLE BLOCK ───────────────────────────────────────────────────────
     story.append(Paragraph('SCREENING RESULTS FOR', sTitle))
     story.append(Paragraph(job_title, sJobTitle))
-    story.append(Paragraph(f'{len(candidates)} candidates screened and ranked · {hr_email}', sMeta))
+    story.append(Paragraph(f'{len(candidates)} candidates screened and ranked', sMeta))
     story.append(Spacer(1, 6*mm))
     story.append(HRFlowable(width=W, thickness=1, color=BORDER))
     story.append(Spacer(1, 5*mm))
@@ -228,7 +303,7 @@ def generate_pdf_report(job_title: str, hr_email: str, candidates: List[dict]) -
     story.append(HRFlowable(width=W, thickness=1, color=BORDER))
     story.append(Spacer(1, 3*mm))
     story.append(Paragraph(
-        'Generated by Lektes · lektes.nimbus-24.com · AI-powered recruitment screening',
+        'Generated by Lektes  ·  lektes.nimbus-24.com  ·  AI-powered recruitment screening',
         ParagraphStyle('ft', fontSize=8, textColor=TEXT_LIGHT,
             fontName='Helvetica', alignment=TA_CENTER)
     ))

@@ -174,6 +174,11 @@ Return ONLY this JSON, no markdown, no explanation:
                     # Hard zone: 3+ years over — red flag, full penalty
                     exp_penalty = min(35, 8 + (overshoot - 2) * 7)
                     exp_flag = f"Overqualified: {cand_exp} yrs experience significantly exceeds the {min_exp}–{max_exp} yr requirement."
+            elif max_exp == 0 and min_exp > 0 and cand_exp > (min_exp * 2 + 3):
+                # No max set but candidate is heavily overqualified (e.g. 14 yrs for a 4-yr role)
+                overshoot = cand_exp - (min_exp + 2)
+                exp_penalty = min(25, 4 + overshoot * 3)
+                exp_flag = f"Overqualified: {cand_exp} yrs experience significantly exceeds the {min_exp}+ yr requirement."
             elif min_exp > 0 and cand_exp < min_exp:
                 shortfall = min_exp - cand_exp
                 exp_penalty = min(35, shortfall * 8)
