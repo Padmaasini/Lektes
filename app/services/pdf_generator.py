@@ -196,7 +196,6 @@ def generate_pdf_report(job_title: str, hr_email: str, candidates: List[dict]) -
     # ── JOB TITLE BLOCK ───────────────────────────────────────────────────────
     story.append(Paragraph('SCREENING RESULTS FOR', sTitle))
     story.append(Paragraph(job_title, sJobTitle))
-    story.append(Paragraph(f'{len(candidates)} candidates screened and ranked', sMeta))
     story.append(Spacer(1, 6*mm))
     story.append(HRFlowable(width=W, thickness=1, color=BORDER))
     story.append(Spacer(1, 5*mm))

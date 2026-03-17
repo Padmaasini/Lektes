@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lektes — AI Recruitment Screening · Demo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;0,900;1,300;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark:     #1a2e1a;
+    --emerald:  #2d7a4f;
+    --em2:      #38a169;
+    --accent:   #6fcf97;
+    --cream:    #faf7f2;
+    --gold:     #c9a96e;
+    --mid:      #8aaa95;
+    --border:   rgba(255,255,255,0.08);
+    --red:      #c0392b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;background:var(--dark);font-family:'Plus Jakarta Sans',sans-serif;color:var(--cream);overflow:hidden;}
+  .deck{width:100vw;height:100vh;position:relative;overflow:hidden;}
+  .slide{
+    position:absolute;inset:0;background:var(--dark);
+    display:flex;flex-direction:column;justify-content:center;
+    padding:56px 80px;opacity:0;transform:translateX(50px);
+    transition:opacity .4s cubic-bezier(.4,0,.2,1),transform .4s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+  }
+  .slide::before{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 80% 60% at 85% 15%,rgba(45,122,79,.13) 0%,transparent 60%),
+      radial-gradient(ellipse 50% 40% at 5% 85%,rgba(111,207,151,.07) 0%,transparent 50%);
+  }
+  .slide.active{opacity:1;transform:translateX(0);pointer-events:all;}
+  .slide.prev{opacity:0;transform:translateX(-50px);}
+
+  /* TYPOGRAPHY */
+  .lbl{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--em2);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+  .lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);}
+  h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(44px,5.5vw,70px);font-weight:700;line-height:1.1;letter-spacing:-.02em;}
+  h2{font-family:'Fraunces',Georgia,serif;font-size:clamp(30px,3.8vw,50px);font-weight:700;line-height:1.15;letter-spacing:-.02em;margin-bottom:28px;}
+  h1 em,h2 em,.sub em{font-style:italic;color:var(--accent);}
+  .sub{font-size:17px;font-weight:300;color:var(--mid);line-height:1.7;max-width:620px;margin-top:14px;}
+
+  /* LOGO */
+  .logo{display:flex;align-items:center;gap:10px;margin-bottom:44px;}
+  .logo-wm{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:700;letter-spacing:-.3px;}
+  .logo-wm span{color:var(--accent);}
+
+  /* NAV */
+  .nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;z-index:100;background:rgba(26,46,26,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:40px;padding:9px 18px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);cursor:pointer;transition:all .22s;}
+  .dot.active{background:var(--accent);width:20px;border-radius:4px;}
+  .nbtn{background:none;border:none;color:var(--mid);font-size:15px;cursor:pointer;padding:2px 5px;transition:color .18s;font-family:inherit;}
+  .nbtn:hover{color:var(--cream);}
+  .cnt{font-size:11px;color:var(--mid);font-weight:500;min-width:32px;text-align:center;}
+  .kbd{position:fixed;bottom:28px;right:36px;font-size:11px;color:var(--mid);display:flex;gap:8px;align-items:center;opacity:.55;}
+  kbd{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:10px;font-family:inherit;color:var(--cream);}
+
+  /* CARDS / GRIDS */
+  .row{display:flex;gap:20px;margin-top:32px;}
+  .card{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:24px 20px;border-top:3px solid var(--em2);transition:border-top-color .2s;}
+  .card:hover{border-top-color:var(--accent);}
+  .big-num{font-family:'Fraunces',Georgia,serif;font-size:50px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:8px;}
+  .card-lbl{font-size:12px;color:var(--mid);line-height:1.5;}
+
+  /* STEPS */
+  .steps{display:flex;gap:16px;margin-top:28px;}
+  .step{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:22px 18px;position:relative;overflow:hidden;}
+  .step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--emerald),var(--accent));opacity:0;transition:opacity .2s;}
+  .step:hover::after{opacity:1;}
+  .sn{font-family:'Fraunces',Georgia,serif;font-size:34px;font-weight:700;color:rgba(111,207,151,.18);line-height:1;margin-bottom:8px;}
+  .si{font-size:20px;margin-bottom:8px;}
+  .st{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:5px;}
+  .sb{font-size:11.5px;color:var(--mid);line-height:1.55;}
+
+  /* FEATURES */
+  .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+  .feat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:18px 16px;display:flex;gap:12px;align-items:flex-start;transition:background .2s,border-color .2s;}
+  .feat:hover{background:rgba(111,207,151,.05);border-color:rgba(111,207,151,.2);}
+  .fi{width:34px;height:34px;border-radius:10px;background:rgba(111,207,151,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .ft{font-size:12.5px;font-weight:700;color:var(--cream);margin-bottom:4px;}
+  .fb{font-size:11px;color:var(--mid);line-height:1.5;}
+
+  /* TECH */
+  .tech{display:flex;flex-direction:column;gap:12px;margin-top:28px;max-width:660px;}
+  .tr{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px 18px;transition:border-color .2s;}
+  .tr:hover{border-color:rgba(111,207,151,.22);}
+  .tl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);width:100px;flex-shrink:0;}
+  .pills{display:flex;flex-wrap:wrap;gap:7px;}
+  .pill{font-size:11.5px;font-weight:600;color:var(--accent);background:rgba(111,207,151,.1);border:1px solid rgba(111,207,151,.2);border-radius:20px;padding:3px 11px;}
+  .pill.g{color:var(--gold);background:rgba(201,169,110,.1);border-color:rgba(201,169,110,.22);}
+
+  /* TABLE */
+  .tbl{width:100%;border-collapse:collapse;margin-top:28px;font-size:14px;}
+  .tbl th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:12px 18px;text-align:left;border-bottom:2px solid var(--border);}
+  .tbl th:first-child{color:var(--mid);}
+  .tbl th:nth-child(2){color:var(--accent);}
+  .tbl th:nth-child(3){color:var(--mid);}
+  .tbl td{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:400;}
+  .tbl tr:last-child td{border-bottom:none;}
+  .tbl tr:hover td{background:rgba(255,255,255,.02);}
+  .tbl td:first-child{color:rgba(255,255,255,.55);font-size:13px;}
+  .tbl td:nth-child(2){color:var(--accent);font-weight:600;}
+  .ck{color:var(--accent);margin-right:4px;}
+  .cx{color:var(--red);margin-right:4px;}
+
+  /* DEMO STATS */
+  .drow{display:flex;gap:18px;margin-top:28px;}
+  .dstat{flex:1;text-align:center;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:18px 10px;}
+  .dn{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:5px;}
+  .dl{font-size:10px;color:var(--mid);font-weight:600;text-transform:uppercase;letter-spacing:.07em;}
+  .cta{margin-top:32px;display:inline-flex;align-items:center;gap:10px;background:var(--emerald);color:var(--cream);font-size:15px;font-weight:600;padding:13px 26px;border-radius:10px;border:none;cursor:pointer;transition:background .2s;text-decoration:none;font-family:inherit;}
+  .cta:hover{background:#1d5235;}
+  .arr{display:inline-block;animation:ab 1.5s infinite;}
+  @keyframes ab{0%,100%{transform:translateX(0);}50%{transform:translateX(5px);}}
+
+  /* ROADMAP */
+  .rm{display:flex;flex-direction:column;gap:12px;margin-top:28px;max-width:580px;}
+  .ri{display:flex;align-items:center;gap:14px;padding:13px 18px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;transition:border-color .2s,background .2s;}
+  .ri:hover{border-color:rgba(111,207,151,.2);background:rgba(111,207,151,.04);}
+  .rd{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;opacity:.45;}
+  .ri:hover .rd{opacity:1;}
+  .rt{font-size:13.5px;color:rgba(250,247,242,.72);font-weight:400;}
+  .rtag{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);background:rgba(255,255,255,.06);border-radius:20px;padding:3px 9px;}
+
+  /* CLOSING */
+  #s9{align-items:center;text-align:center;}
+  .big{font-family:'Fraunces',Georgia,serif;font-size:clamp(38px,5vw,64px);font-weight:700;line-height:1.15;letter-spacing:-.02em;max-width:680px;}
+  .big em{font-style:italic;color:var(--accent);}
+  .tag2{margin-top:18px;font-size:16px;color:var(--mid);font-weight:300;max-width:500px;}
+  .tag2 em{font-style:italic;color:var(--accent);}
+  .urlbox{margin-top:36px;font-size:17px;font-weight:600;color:var(--accent);letter-spacing:.02em;border:1px solid rgba(111,207,151,.25);border-radius:12px;padding:13px 30px;background:rgba(111,207,151,.06);}
+  .by{margin-top:20px;font-size:12px;color:var(--mid);}
+
+  /* BADGE */
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(111,207,151,.28);border-radius:20px;padding:6px 14px;margin-bottom:24px;background:rgba(111,207,151,.07);}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+
+  .datetag{position:absolute;top:44px;right:72px;font-size:12px;color:var(--mid);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- S1: COVER -->
+<div class="slide active" id="s1">
+  <span class="datetag">March 19, 2026</span>
+  <div class="logo">
+    <svg width="34" height="34" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+      <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="#2d7a4f"/>
+      <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="none" stroke="#38a169" stroke-width="1.2" opacity="0.5"/>
+      <circle cx="19" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="33" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="19" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="26" r="3" fill="#c9a96e" opacity="0.95"/>
+      <circle cx="33" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="19" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="33" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <line x1="19" y1="19" x2="33" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="33" y1="19" x2="19" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="19" y1="26" x2="33" y2="26" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="26" y1="19" x2="26" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+    </svg>
+    <div class="logo-wm">Lek<span>tes</span></div>
+  </div>
+  <div class="badge">Powered by Groq AI</div>
+  <h1>Find the <em>right person</em><br>for every role.</h1>
+  <p class="sub">Upload CVs, paste a job description, and get a ranked shortlist <em>with a swish and a flick.</em></p>
+  <div style="margin-top:32px;font-size:13px;color:var(--mid);font-weight:500;">lektes.nimbus-24.com &nbsp;·&nbsp; <span style="color:var(--accent)">AI Recruitment Screening</span></div>
+</div>
+
+<!-- S2: PROBLEM -->
+<div class="slide" id="s2">
+  <div class="lbl">The Problem</div>
+  <h2>Hiring is broken<br>at the <em>first step.</em></h2>
+  <div class="row">
+    <div class="card"><div class="big-num">70%</div><div class="card-lbl">of recruiter time spent<br>manually reading CVs</div></div>
+    <div class="card"><div class="big-num">6s</div><div class="card-lbl">average time spent<br>on each CV</div></div>
+    <div class="card"><div class="big-num">250+</div><div class="card-lbl">applications per role<br>on average in the EU</div></div>
+  </div>
+  <p class="sub" style="margin-top:24px;">Most CVs are screened out in seconds anyway — but those seconds add up to hours of wasted time and inconsistent decisions.</p>
+</div>
+
+<!-- S3: HOW IT WORKS -->
+<div class="slide" id="s3">
+  <div class="lbl">How It Works</div>
+  <h2>Four steps.<br><em>Under 30 seconds.</em></h2>
+  <div class="steps">
+    <div class="step"><div class="sn">01</div><div class="si">📋</div><div class="st">Create a Job</div><div class="sb">Paste any job ad from LinkedIn or your portal. AI extracts title, skills, and experience requirements automatically.</div></div>
+    <div class="step"><div class="sn">02</div><div class="si">📄</div><div class="st">Upload CVs</div><div class="sb">Bulk upload PDFs or DOCX files. Consent checkbox ensures GDPR compliance before upload unlocks.</div></div>
+    <div class="step"><div class="sn">03</div><div class="si">🤖</div><div class="st">AI Screens</div><div class="sb">Every candidate scored 0–100%, ranked, and justified with clear strengths and concerns. No black box.</div></div>
+    <div class="step"><div class="sn">04</div><div class="si">✉️</div><div class="st">Act</div><div class="sb">Download the PDF report, send email with AI-tailored interview questions, or compare top 3 head-to-head.</div></div>
+  </div>
+</div>
+
+<!-- S4: FEATURES -->
+<div class="slide" id="s4">
+  <div class="lbl">Key Features</div>
+  <h2>Everything a hiring team<br><em>actually needs.</em></h2>
+  <div class="fg">
+    <div class="feat"><div class="fi">🎯</div><div><div class="ft">AI Scoring & Ranking</div><div class="fb">Every candidate scored 0–100% with full justification. Ranked shortlist, instantly.</div></div></div>
+    <div class="feat"><div class="fi">📊</div><div><div class="ft">Experience Intelligence</div><div class="fb">Auto-detection of underqualified and overqualified candidates. Red badges. Mathematical penalties.</div></div></div>
+    <div class="feat"><div class="fi">📑</div><div><div class="ft">Branded PDF Report</div><div class="fb">Instant report with candidate cards, scores, pros & cons — ready to share with hiring managers.</div></div></div>
+    <div class="feat"><div class="fi">✉️</div><div><div class="ft">Email + Interview Questions</div><div class="fb">One click sends the full PDF report with AI-tailored interview questions per candidate.</div></div></div>
+    <div class="feat"><div class="fi">⚖️</div><div><div class="ft">Head-to-Head Comparison</div><div class="fb">Top 3 candidates compared side by side across skills, experience, and education.</div></div></div>
+    <div class="feat"><div class="fi">🔒</div><div><div class="ft">GDPR Compliant</div><div class="fb">Consent before upload. Right-to-erasure endpoint. 30-day auto-deletion. Audit-ready.</div></div></div>
+  </div>
+</div>
+
+<!-- S5: TECH -->
+<div class="slide" id="s5">
+  <div class="lbl">Under the Hood</div>
+  <h2>Built for speed.<br><em>Built to scale.</em></h2>
+  <div class="tech">
+    <div class="tr"><div class="tl">AI Engine</div><div class="pills"><span class="pill g">Groq</span><span class="pill g">LLaMA 3.3 70B</span><span class="pill">LangGraph</span><span class="pill">LangChain</span></div></div>
+    <div class="tr"><div class="tl">Backend</div><div class="pills"><span class="pill">Python</span><span class="pill">FastAPI</span><span class="pill">SQLite</span><span class="pill">Pydantic</span></div></div>
+    <div class="tr"><div class="tl">CV Parsing</div><div class="pills"><span class="pill">PyMuPDF</span><span class="pill">pdfplumber</span><span class="pill">python-docx</span></div></div>
+    <div class="tr"><div class="tl">Email & PDF</div><div class="pills"><span class="pill">Resend API</span><span class="pill">ReportLab</span></div></div>
+    <div class="tr"><div class="tl">Infra</div><div class="pills"><span class="pill">Render</span><span class="pill">Cloudflare DNS</span><span class="pill">API key auth</span><span class="pill">Rate limiting</span></div></div>
+  </div>
+</div>
+
+<!-- S6: COMPARISON -->
+<div class="slide" id="s6">
+  <div class="lbl">Competitive Edge</div>
+  <h2>Lektes vs. <em>Traditional ATS</em></h2>
+  <table class="tbl">
+    <thead><tr><th>Capability</th><th>Lektes</th><th>Traditional ATS</th></tr></thead>
+    <tbody>
+      <tr><td>Setup time</td><td>0 minutes</td><td>Days to weeks</td></tr>
+      <tr><td>Screening speed</td><td>Under 30 seconds</td><td>Hours to days</td></tr>
+      <tr><td>Score explanation</td><td><span class="ck">✓</span>Full justification</td><td><span class="cx">✗</span>Black box</td></tr>
+      <tr><td>GDPR built-in</td><td><span class="ck">✓</span>Always</td><td>Optional / extra cost</td></tr>
+      <tr><td>Price to start</td><td>Free</td><td>£100s/month</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- S7: DEMO -->
+<div class="slide" id="s7">
+  <div class="lbl">Live Demo</div>
+  <h2>Watch it <em>work.</em></h2>
+  <p class="sub" style="margin-top:0;">Role: <strong style="color:var(--cream)">Senior Python Backend Developer</strong> · 7 CVs · Live on screen</p>
+  <div class="drow">
+    <div class="dstat"><div class="dn">7</div><div class="dl">CVs screened</div></div>
+    <div class="dstat"><div class="dn">&lt;10s</div><div class="dl">To ranked shortlist</div></div>
+    <div class="dstat"><div class="dn">97%</div><div class="dl">Top candidate score</div></div>
+  </div>
+  <a href="https://lektes.nimbus-24.com" target="_blank" class="cta">Open Lektes <span class="arr">→</span></a>
+</div>
+
+<!-- S8: ROADMAP -->
+<div class="slide" id="s8">
+  <div class="lbl">What's Next</div>
+  <h2>The roadmap<br>after <em>today.</em></h2>
+  <div class="rm">
+    <div class="ri"><div class="rd"></div><div class="rt">Migrate to Google Cloud Run + Vertex AI</div><div class="rtag">Q2 2026</div></div>
+    <div class="ri"><div class="rd"></div><div class="rt">OCR for scanned & image-based CVs (Groq Vision)</div><div class="rtag">Q2 2026</div></div>
+    <div class="ri"><div class="rd"></div><div class="rt">Multilingual UI — French, Dutch, German</div><div class="rtag">Q2 2026</div></div>
+    <div class="ri"><div class="rd"></div><div class="rt">EU AI Act audit log & explainability report</div><div class="rtag">Q3 2026</div></div>
+    <div class="ri"><div class="rd"></div><div class="rt">REST API for ATS integrations</div><div class="rtag">Q3 2026</div></div>
+  </div>
+</div>
+
+<!-- S9: CLOSING -->
+<div class="slide" id="s9">
+  <div class="logo" style="justify-content:center;margin-bottom:28px;">
+    <svg width="40" height="40" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+      <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="#2d7a4f"/>
+      <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="none" stroke="#38a169" stroke-width="1.2" opacity="0.5"/>
+      <circle cx="19" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="33" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="19" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="26" r="3" fill="#c9a96e" opacity="0.95"/>
+      <circle cx="33" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="19" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="26" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <circle cx="33" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+      <line x1="19" y1="19" x2="33" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="33" y1="19" x2="19" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="19" y1="26" x2="33" y2="26" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+      <line x1="26" y1="19" x2="26" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+    </svg>
+    <div class="logo-wm" style="font-size:24px;">Lek<span>tes</span></div>
+  </div>
+  <div class="big">Find the <em>right person</em><br>for every role.</div>
+  <p class="tag2">Upload CVs, paste a job description, and get a ranked shortlist <em>with a swish and a flick.</em></p>
+  <div class="urlbox">lektes.nimbus-24.com</div>
+  <div class="by">Built by Padmaasini · Part of Nimbus-24 · March 2026</div>
+</div>
+
+</div><!-- /deck -->
+
+<nav class="nav">
+  <button class="nbtn" onclick="nav(-1)">←</button>
+  <div id="dots"></div>
+  <span class="cnt" id="cnt">1 / 9</span>
+  <button class="nbtn" onclick="nav(1)">→</button>
+</nav>
+<div class="kbd"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp;<kbd>F</kbd> fullscreen</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const dotsEl=document.getElementById('dots');
+const cnt=document.getElementById('cnt');
+let cur=0;
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=()=>go(i);dotsEl.appendChild(d);});
+function go(n){
+  slides[cur].classList.remove('active');slides[cur].classList.add('prev');
+  const old=cur;setTimeout(()=>slides[old].classList.remove('prev'),420);
+  cur=Math.max(0,Math.min(slides.length-1,n));
+  slides[cur].classList.add('active');
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  cnt.textContent=`${cur+1} / ${slides.length}`;
+}
+function nav(d){go(cur+d);}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')nav(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')nav(-1);
+  if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();
+});
+</script>
+</body>
+</html>

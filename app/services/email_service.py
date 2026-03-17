@@ -176,10 +176,41 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
 
   <!-- Header -->
   <div style="background:#1a2e1a;padding:28px 32px;border-radius:12px;margin-bottom:28px;">
-    <div style="font-size:22px;font-weight:700;color:#68d391;margin-bottom:4px;">Lektes</div>
-    <div style="font-size:18px;font-weight:600;color:white;">Screening Report: {job.title}</div>
-    <div style="font-size:13px;color:#a0c0a0;margin-top:4px;">
-      {len(candidates)} candidates ranked · Report attached as PDF
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="vertical-align:middle;">
+          <div style="display:inline-flex;align-items:center;gap:10px;">
+            <svg width="32" height="32" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;">
+              <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="#2d7a4f"/>
+              <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="none" stroke="#38a169" stroke-width="1.2" opacity="0.5"/>
+              <circle cx="19" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="26" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="33" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="19" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="26" cy="26" r="3" fill="#c9a96e" opacity="0.95"/>
+              <circle cx="33" cy="26" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="19" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="26" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <circle cx="33" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+              <line x1="19" y1="19" x2="33" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+              <line x1="33" y1="19" x2="19" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+              <line x1="19" y1="26" x2="33" y2="26" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+              <line x1="26" y1="19" x2="26" y2="33" stroke="#faf7f2" stroke-width="0.8" opacity="0.3"/>
+            </svg>
+            <span style="font-size:22px;font-weight:700;color:#ffffff;vertical-align:middle;">Lek<span style="color:#6fcf97;">tes</span></span>
+          </div>
+          <div style="font-size:12px;color:#8aaa95;margin-top:6px;font-style:italic;">Find the right person for every role.</div>
+        </td>
+        <td style="text-align:right;vertical-align:middle;">
+          <div style="font-size:13px;color:#8aaa95;">AI Recruitment Screening Report</div>
+        </td>
+      </tr>
+    </table>
+    <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
+      <div style="font-size:18px;font-weight:600;color:#ffffff;">Screening Report: {job.title}</div>
+      <div style="font-size:13px;color:#6fcf97;margin-top:4px;font-weight:500;">
+        {len(candidates)} candidates ranked · Full report attached as PDF
+      </div>
     </div>
   </div>
 
