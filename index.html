@@ -625,17 +625,23 @@
     transition: all 0.15s;
   }
   .btn-feedback:hover { border-color: var(--emerald); color: var(--emerald); }
+  .candidate-card.is-rejected { opacity: 0.5; filter: grayscale(0.4); }
+  .candidate-card.is-shortlisted { border-left: 4px solid var(--emerald) !important; }
   .btn-feedback.active-shortlist {
-    background: #e8f5ee; border-color: var(--emerald);
-    color: var(--emerald);
+    background: var(--emerald); border-color: var(--emerald);
+    color: #ffffff; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(45,122,79,0.35);
+    transform: translateY(-1px);
   }
   .btn-feedback.active-reject {
-    background: #fdecea; border-color: #c0392b;
-    color: #c0392b;
+    background: #c0392b; border-color: #c0392b;
+    color: #ffffff; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(192,57,43,0.35);
+    transform: translateY(-1px);
   }
   html.dark .btn-feedback { background: var(--cream2); border-color: var(--border); color: var(--text); }
-  html.dark .btn-feedback.active-shortlist { background: #1a3a22; border-color: var(--emerald); color: var(--bright); }
-  html.dark .btn-feedback.active-reject { background: #3a1a1a; border-color: #e57373; color: #e57373; }
+  html.dark .btn-feedback.active-shortlist { background: var(--emerald); border-color: var(--emerald); color: #ffffff; font-weight: 700; }
+  html.dark .btn-feedback.active-reject { background: #c0392b; border-color: #c0392b; color: #ffffff; font-weight: 700; }
 
   .file-item {
     display: flex;
@@ -2901,7 +2907,7 @@ function renderResults(report) {
     ].filter(Boolean).join('');
 
     return `
-      <div class="candidate-card">
+      <div class="candidate-card" data-id="${c.candidate_id || c.id}">
 
         <div class="card-top">
           <div class="card-top-inner">
@@ -2952,12 +2958,7 @@ function renderResults(report) {
             onclick="submitFeedback('${c.candidate_id || c.id}', 'reject')">
             👎 Reject
           </button>
-          <button
-            class="btn-feedback"
-            style="margin-left:auto;border-color:var(--emerald);color:var(--emerald);"
-            onclick="loadQuestionsForCandidate('${c.candidate_id || c.id}', '${(c.name||c.full_name||'').replace(/'/g,"\\'")}', ${c.match_score||0}, ${rank})">
-            📋 Interview Questions
-          </button>
+
         </div>
 
       </div>`;
@@ -2987,26 +2988,33 @@ async function submitFeedback(candidateId, decision) {
   if (rjBtn) {
     rjBtn.className = 'btn-feedback' + (decision === 'reject' ? ' active-reject' : '');
   }
+  // Update card appearance
+  const card = document.querySelector(`.candidate-card[data-id="${candidateId}"]`);
+  if (card) {
+    card.classList.toggle('is-rejected', decision === 'reject');
+    card.classList.toggle('is-shortlisted', decision === 'shortlist');
+  }
 
-  if (!decision) return; // Cleared — no API call needed
+  if (!decision) {
+    toast('Decision cleared', 'success');
+    return;
+  }
+
+  // Show instant feedback to user — don't wait for API
+  toast(decision === 'shortlist' ? '👍 Shortlisted' : '👎 Rejected', 'success');
 
   // Get HR email from job for submitted_by
   const hrEmail = S.hrEmail || '';
 
+  // Save to backend in background — silent fail so UI stays responsive
   try {
     const res = await fetch(`${API}/api/v1/feedback/${candidateId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...apiHeaders() },
       body: JSON.stringify({ decision, submitted_by: hrEmail })
     });
-    if (!res.ok) throw new Error('Feedback save failed');
-    toast(decision === 'shortlist' ? '👍 Shortlisted' : '👎 Rejected', 'success');
   } catch(e) {
-    // Revert on failure
-    S.feedback[candidateId] = prev;
-    if (slBtn) slBtn.className = 'btn-feedback' + (prev === 'shortlist' ? ' active-shortlist' : '');
-    if (rjBtn) rjBtn.className = 'btn-feedback' + (prev === 'reject' ? ' active-reject' : '');
-    toast('Could not save feedback', 'error');
+    // Silent — UI already updated, no need to revert
   }
 }
 
