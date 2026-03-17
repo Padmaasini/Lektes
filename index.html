@@ -2305,7 +2305,7 @@
 
 <script>
 const API = 'https://lektes.nimbus-24.com';
-let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null };
+let S = { jobId: null, screenId: null, reqSkills: [], niceSkills: [], files: [], reportData: null, feedback: {}, questions: {} };
 
   // ── VIEW SWITCHING ────────────────────────────────────────────────────────
   function launchApp() {
@@ -2967,9 +2967,8 @@ function renderResults(report) {
 
 // ── FEEDBACK ──────────────────────────────────────────────────
 // S.feedback stores { candidate_id: "shortlist"|"reject" } for the session
-if (!S.feedback) S.feedback = {};
-
 async function submitFeedback(candidateId, decision) {
+  if (!S.feedback) S.feedback = {}; // safety guard
   // Toggle off if clicking same button again
   if (S.feedback[candidateId] === decision) {
     decision = null;
