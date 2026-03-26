@@ -18,7 +18,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from app.api.endpoints import jobs, candidates, screen, reports, health, feedback
+from app.api.endpoints import jobs, candidates, screen, reports, health, feedback, analytics
 from app.core.config import settings
 from app.core.database import SessionLocal, init_db
 
@@ -102,6 +102,7 @@ app.include_router(candidates.router, prefix="/api/v1/candidates", tags=["Candid
 app.include_router(screen.router,     prefix="/api/v1/screen",     tags=["Screening"])
 app.include_router(reports.router,    prefix="/api/v1/reports",    tags=["Reports"])
 app.include_router(feedback.router,   prefix="/api/v1/feedback",   tags=["Feedback"])
+app.include_router(analytics.router,  prefix="/api/v1",             tags=["Analytics"])
 
 
 # ── FRONTEND ────────────────────────────────────────────────────
