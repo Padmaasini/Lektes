@@ -1904,6 +1904,60 @@
   }
   .app-back-btn:hover { border-color: var(--emerald); color: var(--emerald); }
 
+
+  /* ── NOTIFICATION MODAL ─────────────────────────────────── */
+  .notify-modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .notify-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .notify-modal {
+    background: var(--cream2); border: 1px solid var(--border-light);
+    border-radius: 20px; padding: 36px 32px;
+    max-width: 440px; width: 90%; position: relative;
+    transform: translateY(16px); transition: transform .25s;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  }
+  .notify-modal-overlay.open .notify-modal { transform: translateY(0); }
+  .notify-modal-icon { font-size: 36px; margin-bottom: 12px; }
+  .notify-modal h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .notify-modal p { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 24px; }
+  .notify-modal .candidate-highlight {
+    background: var(--cream); border: 1px solid var(--border-light);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+    font-size: 13px; color: var(--text);
+  }
+  .notify-modal .candidate-highlight strong { color: var(--emerald); }
+  .notify-modal .modal-btns { display: flex; gap: 12px; }
+  .notify-modal .btn-confirm-shortlist {
+    flex: 1; background: var(--emerald); color: #fff;
+    border: none; border-radius: 10px; padding: 12px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background .2s;
+  }
+  .notify-modal .btn-confirm-shortlist:hover { background: #226040; }
+  .notify-modal .btn-confirm-reject {
+    flex: 1; background: #c0392b; color: #fff;
+    border: none; border-radius: 10px; padding: 12px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background .2s;
+  }
+  .notify-modal .btn-confirm-reject:hover { background: #922b21; }
+  .notify-modal .btn-cancel {
+    background: none; border: 1px solid var(--border-light);
+    border-radius: 10px; padding: 12px 20px;
+    font-size: 13px; color: var(--text-mid); cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .notify-modal .btn-cancel:hover { border-color: var(--emerald); color: var(--emerald); }
+  .notify-modal .email-warning {
+    font-size: 12px; color: #c0392b; margin-top: 12px;
+    padding: 8px 12px; background: #fdf0ee;
+    border-radius: 8px; border: 1px solid #f0b8b0;
+  }
+
 </style>
 </head>
 <body>
@@ -3002,6 +3056,17 @@ async function submitFeedback(candidateId, decision) {
   // Show instant feedback to user — don't wait for API
   toast(decision === 'shortlist' ? '👍 Shortlisted' : '👎 Rejected', 'success');
 
+  // Open notification modal — ask HR if they want to email the candidate
+  const candidateEmail = S.reportData?.candidates?.find(
+    c => (c.candidate_id || c.id) === candidateId
+  )?.email || '';
+  const candidateName = S.reportData?.candidates?.find(
+    c => (c.candidate_id || c.id) === candidateId
+  )?.name || S.reportData?.candidates?.find(
+    c => (c.candidate_id || c.id) === candidateId
+  )?.full_name || '';
+  openNotifyModal(candidateId, candidateName, candidateEmail, decision);
+
   // Get HR email from job for submitted_by
   const hrEmail = S.hrEmail || '';
 
@@ -3308,7 +3373,28 @@ function downloadReport() {
       <button onclick="window.print()" style="padding:12px 32px;background:#1a2e1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🖨 Print / Save as PDF</button>
     </div>
   </div>
-  </body></html>`;
+  
+<!-- ── CANDIDATE NOTIFICATION MODAL ────────────────────── -->
+<div class="notify-modal-overlay" id="notifyModal">
+  <div class="notify-modal">
+    <div class="notify-modal-icon" id="notifyIcon">📧</div>
+    <h3 id="notifyTitle">Send notification?</h3>
+    <p id="notifyDesc">This will send an email to the candidate.</p>
+    <div class="candidate-highlight" id="notifyCandidate">
+      <strong id="notifyCandidateName">—</strong><br>
+      <span id="notifyCandidateEmail" style="color:var(--text-mid);font-size:12px;">—</span>
+    </div>
+    <div id="notifyEmailWarning" class="email-warning" style="display:none;">
+      ⚠️ No email address found for this candidate — cannot send notification.
+    </div>
+    <div class="modal-btns" id="notifyBtns">
+      <button class="btn-cancel" onclick="closeNotifyModal()">Cancel</button>
+      <button id="notifyConfirmBtn" onclick="confirmNotify()">Send</button>
+    </div>
+  </div>
+</div>
+
+</body></html>`;
 
   const blob = new Blob([html], { type: 'text/html' });
   const url  = URL.createObjectURL(blob);
@@ -3424,6 +3510,90 @@ async function clearAllData() {
   } catch(e) { toast('Could not clear data', 'error'); }
 }
 
+
+
+// ── CANDIDATE NOTIFICATION ────────────────────────────────
+// CALENDLY_LINK — replace with your real link after creating at calendly.com
+const CALENDLY_LINK = 'https://calendly.com/admin-nimbus-24/30min';
+const HR_NAME = 'Lektes Hiring Team';
+
+let _notifyState = { candidateId: null, decision: null };
+
+function openNotifyModal(candidateId, candidateName, candidateEmail, decision) {
+  _notifyState = { candidateId, decision };
+  const isShortlist = decision === 'shortlist';
+
+  document.getElementById('notifyIcon').textContent    = isShortlist ? '📅' : '📩';
+  document.getElementById('notifyTitle').textContent   = isShortlist
+    ? 'Send interview invitation?' : 'Send rejection email?';
+  document.getElementById('notifyDesc').textContent    = isShortlist
+    ? 'This will send a branded interview invitation with your Calendly booking link to the candidate.'
+    : 'This will send a professional, warm rejection email to the candidate.';
+  document.getElementById('notifyCandidateName').textContent  = candidateName || 'Unknown';
+  document.getElementById('notifyCandidateEmail').textContent = candidateEmail || 'No email found';
+
+  const hasEmail = candidateEmail && candidateEmail.trim() !== '';
+  document.getElementById('notifyEmailWarning').style.display = hasEmail ? 'none' : 'block';
+  document.getElementById('notifyBtns').style.display = 'flex';
+
+  const confirmBtn = document.getElementById('notifyConfirmBtn');
+  confirmBtn.className = isShortlist ? 'btn-confirm-shortlist' : 'btn-confirm-reject';
+  confirmBtn.textContent = isShortlist ? '📅 Send Invitation' : '📩 Send Rejection';
+  confirmBtn.disabled = !hasEmail;
+
+  document.getElementById('notifyModal').classList.add('open');
+}
+
+function closeNotifyModal() {
+  document.getElementById('notifyModal').classList.remove('open');
+  _notifyState = { candidateId: null, decision: null };
+}
+
+async function confirmNotify() {
+  const { candidateId, decision } = _notifyState;
+  if (!candidateId || !decision) return;
+
+  const confirmBtn = document.getElementById('notifyConfirmBtn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Sending…';
+
+  const endpoint = decision === 'shortlist'
+    ? `${API}/api/v1/notify/shortlist/${candidateId}`
+    : `${API}/api/v1/notify/reject/${candidateId}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...apiHeaders() },
+      body: JSON.stringify({
+        hr_name:       HR_NAME,
+        calendly_link: decision === 'shortlist' ? CALENDLY_LINK : null,
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+
+    closeNotifyModal();
+    toast(
+      decision === 'shortlist'
+        ? '📅 Interview invitation sent!' : '📩 Rejection email sent!',
+      'success'
+    );
+  } catch(e) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = decision === 'shortlist' ? '📅 Send Invitation' : '📩 Send Rejection';
+    toast(`Failed to send email: ${e.message}`, 'error');
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('notifyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeNotifyModal();
+});
+
 </script>
 
 <!-- MANAGE MODAL -->
@@ -3443,6 +3613,27 @@ async function clearAllData() {
     <div class="jobs-list-title">Existing Jobs</div>
     <div class="jobs-list" id="jobsList">
       <div class="modal-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── CANDIDATE NOTIFICATION MODAL ────────────────────── -->
+<div class="notify-modal-overlay" id="notifyModal">
+  <div class="notify-modal">
+    <div class="notify-modal-icon" id="notifyIcon">📧</div>
+    <h3 id="notifyTitle">Send notification?</h3>
+    <p id="notifyDesc">This will send an email to the candidate.</p>
+    <div class="candidate-highlight" id="notifyCandidate">
+      <strong id="notifyCandidateName">—</strong><br>
+      <span id="notifyCandidateEmail" style="color:var(--text-mid);font-size:12px;">—</span>
+    </div>
+    <div id="notifyEmailWarning" class="email-warning" style="display:none;">
+      ⚠️ No email address found for this candidate — cannot send notification.
+    </div>
+    <div class="modal-btns" id="notifyBtns">
+      <button class="btn-cancel" onclick="closeNotifyModal()">Cancel</button>
+      <button id="notifyConfirmBtn" onclick="confirmNotify()">Send</button>
     </div>
   </div>
 </div>

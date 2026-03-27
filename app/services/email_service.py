@@ -252,3 +252,196 @@ def build_email_html(job, candidates: List, questions_by_candidate: Optional[dic
 
 </body>
 </html>"""
+
+
+# ── CANDIDATE NOTIFICATION EMAILS ────────────────────────────────────────────
+
+CALENDLY_LINK = "https://calendly.com/admin-nimbus-24/30min"  # Replace with your Calendly URL
+
+async def send_shortlist_email(
+    candidate_name: str,
+    candidate_email: str,
+    job_title: str,
+    hr_name: str = "Lektes Hiring Team",
+    calendly_link: str = None
+) -> bool:
+    """Send interview invitation email to shortlisted candidate."""
+    if not _init_resend():
+        print("  ⚠️  RESEND_API_KEY not configured — skipping email")
+        return False
+
+    link = calendly_link or CALENDLY_LINK
+    first_name = candidate_name.split()[0] if candidate_name else "there"
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff;">
+
+  <!-- Header -->
+  <div style="background:#1a2e1a;padding:24px 28px;border-radius:12px;margin-bottom:24px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="vertical-align:middle;">
+          <svg width="28" height="28" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px;">
+            <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="#2d7a4f"/>
+            <circle cx="26" cy="26" r="3" fill="#c9a96e" opacity="0.95"/>
+            <circle cx="19" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="33" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="19" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="33" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+          </svg>
+          <span style="font-size:20px;font-weight:700;color:#ffffff;vertical-align:middle;">Lek<span style="color:#6fcf97;">tes</span></span>
+        </td>
+        <td style="text-align:right;vertical-align:middle;">
+          <span style="font-size:12px;color:#8aaa95;">Interview Invitation</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Body -->
+  <p style="font-size:16px;color:#1a2e1a;font-weight:600;margin-bottom:8px;">Dear {first_name},</p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:16px;">
+    Thank you for your interest in the <strong>{job_title}</strong> position.
+    We have reviewed your application and are pleased to invite you to an initial screening call.
+  </p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:28px;">
+    Please use the link below to book a time that works best for you:
+  </p>
+
+  <!-- CTA Button -->
+  <div style="text-align:center;margin-bottom:32px;">
+    <a href="{link}" style="display:inline-block;background:#2d7a4f;color:#ffffff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:10px;text-decoration:none;">
+      📅 &nbsp; Schedule Your Screening Call
+    </a>
+  </div>
+
+  <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:8px;">
+    If the button above doesn't work, copy and paste this link into your browser:<br>
+    <a href="{link}" style="color:#2d7a4f;">{link}</a>
+  </p>
+
+  <hr style="border:none;border-top:1px solid #e8e8e8;margin:28px 0;">
+
+  <p style="font-size:13px;color:#888;line-height:1.7;">
+    We look forward to speaking with you.<br>
+    <strong style="color:#1a2e1a;">{hr_name}</strong>
+  </p>
+
+  <!-- Footer -->
+  <div style="margin-top:32px;padding:14px 20px;background:#f5f5f5;border-radius:8px;font-size:11px;color:#999;text-align:center;">
+    Powered by Lektes AI · lektes.nimbus-24.com
+  </div>
+
+</body>
+</html>"""
+
+    try:
+        from_email = settings.RESEND_FROM_EMAIL or "Lektes <hr@nimbus-24.com>"
+        resend.Emails.send({
+            "from":    from_email,
+            "to":      [candidate_email],
+            "subject": f"Interview Invitation — {job_title}",
+            "html":    html,
+        })
+        print(f"  📧 Shortlist email sent to {candidate_email}")
+        return True
+    except Exception as e:
+        print(f"  Email error: {e}")
+        return False
+
+
+async def send_rejection_email(
+    candidate_name: str,
+    candidate_email: str,
+    job_title: str,
+    hr_name: str = "Lektes Hiring Team"
+) -> bool:
+    """Send a warm, professional rejection email to candidate."""
+    if not _init_resend():
+        print("  ⚠️  RESEND_API_KEY not configured — skipping email")
+        return False
+
+    first_name = candidate_name.split()[0] if candidate_name else "there"
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff;">
+
+  <!-- Header -->
+  <div style="background:#1a2e1a;padding:24px 28px;border-radius:12px;margin-bottom:24px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="vertical-align:middle;">
+          <svg width="28" height="28" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px;">
+            <rect x="13" y="13" width="26" height="26" rx="8" transform="rotate(45 26 26)" fill="#2d7a4f"/>
+            <circle cx="26" cy="26" r="3" fill="#c9a96e" opacity="0.95"/>
+            <circle cx="19" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="33" cy="19" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="19" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+            <circle cx="33" cy="33" r="1.8" fill="#faf7f2" opacity="0.6"/>
+          </svg>
+          <span style="font-size:20px;font-weight:700;color:#ffffff;vertical-align:middle;">Lek<span style="color:#6fcf97;">tes</span></span>
+        </td>
+        <td style="text-align:right;vertical-align:middle;">
+          <span style="font-size:12px;color:#8aaa95;">Application Update</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Body -->
+  <p style="font-size:16px;color:#1a2e1a;font-weight:600;margin-bottom:8px;">Dear {first_name},</p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:16px;">
+    Thank you for taking the time to apply for the <strong>{job_title}</strong> position
+    and for your interest in joining our team.
+  </p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:16px;">
+    After carefully reviewing your application, we regret to inform you that we will
+    not be moving forward with your candidacy at this time. This was a difficult decision,
+    as we received many strong applications.
+  </p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:28px;">
+    We appreciate the time and effort you invested in your application and encourage
+    you to apply for future opportunities that match your profile.
+  </p>
+
+  <p style="font-size:14px;color:#333;line-height:1.7;">
+    We wish you the very best in your job search and future career endeavours.
+  </p>
+
+  <hr style="border:none;border-top:1px solid #e8e8e8;margin:28px 0;">
+
+  <p style="font-size:13px;color:#888;line-height:1.7;">
+    Kind regards,<br>
+    <strong style="color:#1a2e1a;">{hr_name}</strong>
+  </p>
+
+  <!-- Footer -->
+  <div style="margin-top:32px;padding:14px 20px;background:#f5f5f5;border-radius:8px;font-size:11px;color:#999;text-align:center;">
+    Powered by Lektes AI · lektes.nimbus-24.com
+  </div>
+
+</body>
+</html>"""
+
+    try:
+        from_email = settings.RESEND_FROM_EMAIL or "Lektes <hr@nimbus-24.com>"
+        resend.Emails.send({
+            "from":    from_email,
+            "to":      [candidate_email],
+            "subject": f"Your application for {job_title}",
+            "html":    html,
+        })
+        print(f"  📧 Rejection email sent to {candidate_email}")
+        return True
+    except Exception as e:
+        print(f"  Email error: {e}")
+        return False
