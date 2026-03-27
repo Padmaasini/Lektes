@@ -54,6 +54,23 @@ async def parse_cv(file_path: str, ext: str) -> dict:
     structured = await extract_with_llm(raw_text)
     structured["raw_text"] = raw_text
 
+    # ── Email safety net ───────────────────────────────────────
+    # LLM sometimes misses email in styled headers or icon-decorated rows.
+    # If email is missing, always try regex on the raw text as a fallback.
+    if not structured.get("email") and raw_text:
+        email_matches = re.findall(
+            r'\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b',
+            raw_text
+        )
+        if email_matches:
+            # Filter out common false positives
+            filtered = [e for e in email_matches
+                        if not any(fp in e.lower() for fp in
+                                   ['example.com', 'youremail', 'email@', 'test@'])]
+            if filtered:
+                structured["email"] = filtered[0]
+                print(f"  📧 Email rescued by regex: {filtered[0]}")
+
     # ── Name sanity check ─────────────────────────────────────
     # If the LLM returned a UUID or garbage as the name, fall back
     # to deriving a display name from the email address instead.
