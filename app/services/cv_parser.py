@@ -143,7 +143,7 @@ async def extract_with_llm(raw_text: str) -> dict:
         
         Extract and return this exact JSON structure:
         {{
-            "full_name": "candidate full name or null",
+            "full_name": "candidate EXACT full name as written at the top of the CV — do not shorten, truncate or modify it",
             "email": "email address or null",
             "phone": "phone number or null",
             "location": "city/country or null",

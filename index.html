@@ -1938,6 +1938,10 @@
     font-family: inherit; transition: background .2s;
   }
   .notify-modal .btn-confirm-shortlist:hover { background: #226040; }
+  .notify-modal .btn-confirm-shortlist:disabled,
+  .notify-modal .btn-confirm-reject:disabled {
+    opacity: 0.4; cursor: not-allowed; pointer-events: none;
+  }
   .notify-modal .btn-confirm-reject {
     flex: 1; background: #c0392b; color: #fff;
     border: none; border-radius: 10px; padding: 12px;
@@ -3003,13 +3007,13 @@ function renderResults(report) {
           <button
             class="btn-feedback ${(S.feedback && S.feedback[c.candidate_id || c.id]) === 'shortlist' ? 'active-shortlist' : ''}"
             id="fb-shortlist-${c.candidate_id || c.id}"
-            onclick="submitFeedback('${c.candidate_id || c.id}', 'shortlist')">
+            onclick="submitFeedback('${c.candidate_id || c.id}', 'shortlist', '${(c.name||c.full_name||'').replace(/'/g,'')}', '${(c.email||'').replace(/'/g,'')}')">
             👍 Shortlist
           </button>
           <button
             class="btn-feedback ${(S.feedback && S.feedback[c.candidate_id || c.id]) === 'reject' ? 'active-reject' : ''}"
             id="fb-reject-${c.candidate_id || c.id}"
-            onclick="submitFeedback('${c.candidate_id || c.id}', 'reject')">
+            onclick="submitFeedback('${c.candidate_id || c.id}', 'reject', '${(c.name||c.full_name||'').replace(/'/g,'')}', '${(c.email||'').replace(/'/g,'')}')">
             👎 Reject
           </button>
 
@@ -3021,7 +3025,7 @@ function renderResults(report) {
 
 // ── FEEDBACK ──────────────────────────────────────────────────
 // S.feedback stores { candidate_id: "shortlist"|"reject" } for the session
-async function submitFeedback(candidateId, decision) {
+async function submitFeedback(candidateId, decision, candidateName, candidateEmail) {
   if (!S.feedback) S.feedback = {}; // safety guard
   // Toggle off if clicking same button again
   if (S.feedback[candidateId] === decision) {
@@ -3056,16 +3060,8 @@ async function submitFeedback(candidateId, decision) {
   // Show instant feedback to user — don't wait for API
   toast(decision === 'shortlist' ? '👍 Shortlisted' : '👎 Rejected', 'success');
 
-  // Open notification modal — ask HR if they want to email the candidate
-  const candidateEmail = S.reportData?.candidates?.find(
-    c => (c.candidate_id || c.id) === candidateId
-  )?.email || '';
-  const candidateName = S.reportData?.candidates?.find(
-    c => (c.candidate_id || c.id) === candidateId
-  )?.name || S.reportData?.candidates?.find(
-    c => (c.candidate_id || c.id) === candidateId
-  )?.full_name || '';
-  openNotifyModal(candidateId, candidateName, candidateEmail, decision);
+  // Open notification modal — name and email passed directly from card template
+  openNotifyModal(candidateId, candidateName || '', candidateEmail || '', decision);
 
   // Get HR email from job for submitted_by
   const hrEmail = S.hrEmail || '';
@@ -3540,6 +3536,22 @@ function openNotifyModal(candidateId, candidateName, candidateEmail, decision) {
   confirmBtn.className = isShortlist ? 'btn-confirm-shortlist' : 'btn-confirm-reject';
   confirmBtn.textContent = isShortlist ? '📅 Send Invitation' : '📩 Send Rejection';
   confirmBtn.disabled = !hasEmail;
+  if (!hasEmail) {
+    confirmBtn.style.opacity = '0.4';
+    confirmBtn.style.cursor  = 'not-allowed';
+  } else {
+    confirmBtn.style.opacity = '1';
+    confirmBtn.style.cursor  = 'pointer';
+  }
+  if (!hasEmail) {
+    confirmBtn.style.opacity = '0.4';
+    confirmBtn.style.cursor = 'not-allowed';
+    confirmBtn.style.pointerEvents = 'none';
+  } else {
+    confirmBtn.style.opacity = '1';
+    confirmBtn.style.cursor = 'pointer';
+    confirmBtn.style.pointerEvents = 'auto';
+  }
 
   document.getElementById('notifyModal').classList.add('open');
 }
