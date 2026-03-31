@@ -40,3 +40,5 @@ reportlab>=4.0.0
 
 # ── Utilities ──────────────────────────────────────────────────
 python-dotenv>=1.0.0
+
+psycopg2-binary>=2.9.9

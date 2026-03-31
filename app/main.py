@@ -82,7 +82,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS ───────────────────────────────────────────────────────
 ALLOWED_ORIGINS = (
-    ["https://lektes.nimbus-24.com", "https://hrassist-dqb3.onrender.com"]
+    ["https://lektes.nimbus-24.com"]
     if not settings.DEBUG
     else ["*"]
 )

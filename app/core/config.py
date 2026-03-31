@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "sqlite:///./lektes.db"
+    DATABASE_URL: str = "sqlite:///./lektes.db"  # overridden by env var on Cloud Run
 
     # LLM - Groq
     GROQ_API_KEY: Optional[str] = None
