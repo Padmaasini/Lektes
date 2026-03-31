@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/able-analyst-490410-s8/lektes-repo/lektes-api', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/able-analyst-490410-s8/lektes-repo/lektes-api']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'lektes-api'
+      - '--image=us-central1-docker.pkg.dev/able-analyst-490410-s8/lektes-repo/lektes-api'
+      - '--region=europe-west1'
+images:
+  - 'us-central1-docker.pkg.dev/able-analyst-490410-s8/lektes-repo/lektes-api'
